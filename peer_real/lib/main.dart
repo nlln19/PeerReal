@@ -12,19 +12,17 @@ import 'package:logger/logger.dart';
 
 var logger = Logger();
 
-
-
 final String localPeerId = const Uuid().v4(); // unique per app install
 
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: ".env");
+  WidgetsFlutterBinding.ensureInitialized(); //Returns an instance of the binding that implements [WidgetsBinding]. If no binding has yet been initialized, the [WidgetsFlutterBinding] class is used to create and initialize one. You only need to call this method if you need the binding to be initialized before calling [runApp].
+  await dotenv.load(fileName: ".env"); //Ditto Setup vom .env werden geladen
   runApp(const MaterialApp(home: PeerRealDemo()));
 }
 
-class PeerRealDemo extends StatefulWidget {
-  const PeerRealDemo({super.key});
+class PeerRealDemo extends StatefulWidget {  //State sind Informationen auf den Widgets -> state of the widget is the data of the objects that its properties (parameters) are sustaining at the time of its creation
+  const PeerRealDemo({super.key}); //Stateless: The widgets whose state can not be altered once they are built. Statefull: Can Alter.
   @override
   State<PeerRealDemo> createState() => _PeerRealDemoState();
 }
@@ -147,7 +145,7 @@ class _PeerRealDemoState extends State<PeerRealDemo> {
         "name": "Ameise.jpg",
         "createdAt": DateTime.now().millisecondsSinceEpoch,
         "attachment": token,
-        "author": localPeerId, // ✅ identify which peer sent it
+        "author": localPeerId, // identify which peer sent it
       },
     },
   );
@@ -202,8 +200,9 @@ class _PeerRealDemoState extends State<PeerRealDemo> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text("PeerRealDemo")),
+      appBar: AppBar(title: const Text("PeerReal"), backgroundColor: Color.fromRGBO(61, 61, 129, 1),),
       floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.blue,
         onPressed: addSampleImage,
         child: const Icon(Icons.cloud_upload),
       ),
