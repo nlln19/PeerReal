@@ -1,122 +1,241 @@
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:ditto_live/ditto_live.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'dart:async';
+import 'package:uuid/uuid.dart';
+import 'package:logger/logger.dart';
 
-void main() {
-  runApp(const MyApp());
+var logger = Logger();
+
+
+
+final String localPeerId = const Uuid().v4(); // unique per app install
+
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
+  runApp(const MaterialApp(home: PeerRealDemo()));
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  // This widget is the root of your application.
+class PeerRealDemo extends StatefulWidget {
+  const PeerRealDemo({super.key});
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
+  State<PeerRealDemo> createState() => _PeerRealDemoState();
+}
+
+class _PeerRealDemoState extends State<PeerRealDemo> {
+  Ditto? _ditto;
+  final appID =
+      dotenv.env['DITTO_APP_ID'] ?? (throw Exception("env not found"));
+  final token = dotenv.env['DITTO_PLAYGROUND_TOKEN'] ??
+      (throw Exception("env not found"));
+  final authUrl = dotenv.env['DITTO_AUTH_URL'];
+  final websocketUrl =
+      dotenv.env['DITTO_WEBSOCKET_URL'] ?? (throw Exception("env not found"));
+
+  StoreObserver? _observer;
+  List<Map<String, dynamic>> _files = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _initDitto();
+    logger.d("works 49");
   }
-}
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+  Future<void> _initDitto() async {
+ 
+    // Request permissions on mobile
+    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+      await [
+        Permission.bluetoothConnect,
+        Permission.bluetoothAdvertise,
+        Permission.bluetoothScan,
+        Permission.nearbyWifiDevices,
+      ].request();
+    }
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
+    await Ditto.init();
+    
+    final identity = OnlinePlaygroundIdentity(
+      appID: appID,
+      token: token,
+      enableDittoCloudSync: false,
+      customAuthUrl: authUrl);
 
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
+    final ditto = await Ditto.open(identity: identity);
+    
+    ditto.updateTransportConfig((config) {
+      // Note: this will not enable peer-to-peer sync on the web platform
+      config.setAllPeerToPeerEnabled(true);
+      config.connect.webSocketUrls.add(websocketUrl);
+      logger.d("works 78");
+    });
 
-  final String title;
+    await ditto.store.execute("ALTER SYSTEM SET DQL_STRICT_MODE = false");
+    
+    ditto.startSync();
 
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
+    if(mounted){
+      setState(() {
+        _ditto = ditto;
+      });
+      logger.d("works 89");
+    }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+    //AB DO MUSS MEH KORRIGIERE
 
-  void _incrementCounter() {
+    // Observe collection
+    final observer = ditto.store.registerObserver(
+    "SELECT name, createdAt, attachment FROM files ORDER BY createdAt DESC",
+    onChange: (res) {
+      setState(() {
+        _files = res.items.map((r) => Map<String, dynamic>.from(r.value)).toList();
+        logger.d("works 100");
+      });
+    },  
+  );
+
+
+
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      _ditto = ditto;
+      _observer = observer;
     });
   }
+  
+  /// Inserts a hard-coded image as attachment and document
+  // Future<void> addSampleImage() async {
+    
+  //   if (_ditto == null) return;
+  //   // Load image bytes (assets/Ameise.jpg)
+  //   final attachment = await _ditto!.store.newAttachment('assets/Ameise.jpg',
+  //   AttachmentMetadata({"name": "Ameise.jpg"}),
+  //   );
+
+  //   final document = {
+  //     "_id": "123",
+  //     "my_attachment": attachment,
+  //   };
+
+  //   final query = "INSERT INTO COLLECTION files (my_attachment ATTACHMENT) VALUES (:document)";
+
+  //   await _ditto!.store.execute(query); 
+  //   debugPrint("Inserted Ameise.jpg with attachment token");
+  // }
+  Future<void> addSampleImage() async {
+  if (_ditto == null) return;
+
+  // Load image as bytes (you can later replace this with a picker)
+  final bytes = await rootBundle.load('assets/Ameise.jpg');
+  final data = bytes.buffer.asUint8List();
+
+  // Create the attachment token for this image
+  final token = await _ditto!.store.newAttachment(data);
+
+  // Insert the metadata document
+  await _ditto!.store.execute(
+    "INSERT INTO COLLECTION files (attachment ATTACHMENT) VALUES (:doc)",
+    arguments: {
+      "doc": {
+        "name": "Ameise.jpg",
+        "createdAt": DateTime.now().millisecondsSinceEpoch,
+        "attachment": token,
+        "author": localPeerId, // ✅ identify which peer sent it
+      },
+    },
+  );
+  logger.d("works 154");
+}
+
+
+  Future<ImageProvider?> _getImage(Map<String, dynamic> doc) async {
+  final token = doc["attachment"] as Map<String, dynamic>?;
+  if (token == null) return null;
+
+  // This Completer will complete when the attachment finishes downloading.
+  final completer = Completer<Uint8List>();
+
+  // Begin fetching the attachment using the token.
+  _ditto!.store.fetchAttachment(token, (event) {
+    if (event is AttachmentFetchEventCompleted) {
+      // When the attachment is completely downloaded, complete the future.
+      completer.complete(event.attachment.data);
+    } else if (event is AttachmentFetchEventProgress) {
+      // Progress update (optional)
+      debugPrint(
+        "Downloading attachment: ${event.downloadedBytes} / ${event.totalBytes} bytes",
+      );
+    } else if (event is AttachmentFetchEventDeleted) {
+      // The attachment was deleted before it could be fetched.
+      completer.completeError(Exception("Attachment deleted"));
+    }
+    logger.d("works 179");
+  });
+
+  try {
+    // Wait until the attachment is fully fetched.
+    final bytes = await completer.future;
+    return MemoryImage(bytes); // Use bytes to display image in Flutter
+  } catch (e) {
+    debugPrint("Failed to fetch attachment: $e");
+    return null;
+  }
+}
+
+
+
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
+    final ditto = _ditto;
+    if (ditto == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
+      appBar: AppBar(title: const Text("PeerRealDemo")),
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+        onPressed: addSampleImage,
+        child: const Icon(Icons.cloud_upload),
+      ),
+      body: ListView.builder(
+        itemCount: _files.length,
+        itemBuilder: (context, i) {
+          final doc = _files[i];
+          return FutureBuilder<ImageProvider?>(
+            future: _getImage(doc),
+            builder: (context, snap) {
+              if (!snap.hasData) {
+                return ListTile(
+                  title: Text(doc["name"] ?? "Unnamed"),
+                  subtitle: const Text("Loading image..."),
+                );
+              }
+              return ListTile(
+                leading: Image(image: snap.data!, width: 56, height: 56),
+                title: Text(doc["name"] ?? "Unnamed"),
+              );
+            },
+          );
+        },
+      ),
     );
+  }
+
+  @override
+  void dispose() {
+    _observer?.cancel();
+    _ditto?.stopSync();
+    _ditto?.close();
+    super.dispose();
   }
 }
