@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import '../services/ditto_service.dart';
 import '../services/permission_service.dart';
 import '../screens/camera_screen.dart';
-import '../widgets/post_item.dart';
+import '../widgets/peer_real_post_card.dart';
 import '../screens/profile_screen.dart';
 import '../screens/friends_screen.dart';
 
@@ -165,7 +165,7 @@ class _HomeScreenState extends State<HomeScreen> {
               itemCount: _files.length,
               itemBuilder: (context, index) {
                 final doc = _files[index];
-                return PostItem(
+                return PeerRealPostCard(
                   key: ValueKey(doc['createdAt']),
                   doc: doc,
                 );

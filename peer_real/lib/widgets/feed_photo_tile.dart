@@ -3,19 +3,19 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:peer_real/services/ditto_service.dart';
 
-class ImageGridItem extends StatefulWidget {
+class FeedPhotoTile extends StatefulWidget {
   final Map<String, dynamic> doc;
 
-  const ImageGridItem({
+  const FeedPhotoTile({
     super.key,
     required this.doc,
   });
 
   @override
-  State<ImageGridItem> createState() => _ImageGridItemState();
+  State<FeedPhotoTile> createState() => _FeedPhotoTileState();
 }
 
-class _ImageGridItemState extends State<ImageGridItem> {
+class _FeedPhotoTileState extends State<FeedPhotoTile> {
   Uint8List? _imageData;
 
   @override
@@ -47,7 +47,7 @@ class _ImageGridItemState extends State<ImageGridItem> {
     print('🎨 Building ImageGridItem with data: ${_imageData?.length} bytes');
     
     return Container(
-      color: _imageData != null ? Colors.green : Colors.red, // Farbige Indikatoren
+      color: _imageData != null ? Colors.green : Colors.red,
       child: _imageData != null && _imageData!.isNotEmpty
           ? Image.memory(
               _imageData!,

@@ -3,19 +3,19 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:peer_real/services/ditto_service.dart';
 
-class PostItem extends StatefulWidget {
+class PeerRealPostCard extends StatefulWidget {
   final Map<String, dynamic> doc;
 
-  const PostItem({
+  const PeerRealPostCard({
     super.key,
     required this.doc,
   });
 
   @override
-  State<PostItem> createState() => _PostItemState();
+  State<PeerRealPostCard> createState() => _PeerRealPostCardState();
 }
 
-class _PostItemState extends State<PostItem> {
+class _PeerRealPostCardState extends State<PeerRealPostCard> {
   Uint8List? _imageData;
   Uint8List? _selfieData;
 
