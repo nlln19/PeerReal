@@ -114,7 +114,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(width: 40),
               _BottomNavItem(
                 icon: Icons.person_outline,
-                label: 'Profil',
+                label: 'Profile',
                 selected: false,
                 onTap: () {
                   Navigator.push(
@@ -139,7 +139,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         size: 72, color: Colors.white24),
                     SizedBox(height: 16),
                     Text(
-                      'Teile deinen ersten PeerReal Moment',
+                      'Share your first PeerReal Moment',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.white70,
@@ -149,7 +149,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     SizedBox(height: 8),
                     Text(
-                      'Tippe auf den Kamera-Button, um ein Foto aufzunehmen.',
+                      'Tap the camera button to take your PeerReal moment!😜',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.white38,

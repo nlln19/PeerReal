@@ -17,7 +17,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF05050A),
         elevation: 0,
-        title: const Text('Freunde'),
+        title: const Text('Friends'),
         actions: [
           IconButton(
             icon: const Icon(Icons.person_add_alt_1_outlined),
@@ -25,7 +25,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
               // später: Friend-Add-Flow
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Freunde hinzufügen kommt später 🙂'),
+                  content: Text('Freunde hinzufügen kommt später😜'),
                 ),
               );
             },
@@ -36,18 +36,18 @@ class _FriendsScreenState extends State<FriendsScreen> {
         children: [
           const SizedBox(height: 8),
 
-          // "Segmente" wie Friends / Requests
+          // Friends / Requests
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _FriendsTabButton(
-                label: 'Freunde',
+                label: 'Friends',
                 selected: _tabIndex == 0,
                 onTap: () => setState(() => _tabIndex = 0),
               ),
               const SizedBox(width: 8),
               _FriendsTabButton(
-                label: 'Anfragen',
+                label: 'Requests',
                 selected: _tabIndex == 1,
                 onTap: () => setState(() => _tabIndex = 1),
               ),
@@ -62,7 +62,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
             child: TextField(
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
-                hintText: 'Freunde suchen',
+                hintText: 'Search for friends',
                 hintStyle: const TextStyle(color: Colors.white38),
                 prefixIcon: const Icon(Icons.search, color: Colors.white38),
                 filled: true,
@@ -103,7 +103,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
     if (friends.isEmpty) {
       return const Center(
         child: Text(
-          'Noch keine Freunde hinzugefügt.',
+          'No friends added yet.',
           style: TextStyle(color: Colors.white54),
         ),
       );
@@ -127,7 +127,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
             style: const TextStyle(color: Colors.white),
           ),
           subtitle: const Text(
-            'Tippe, um Profil zu sehen',
+            'Tap to view profile',
             style: TextStyle(color: Colors.white38, fontSize: 12),
           ),
           onTap: () {
@@ -142,7 +142,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
     // Platzhalter: keine Anfragen
     return const Center(
       child: Text(
-        'Keine ausstehenden Anfragen.',
+        'No requests received.',
         style: TextStyle(color: Colors.white54),
       ),
     );

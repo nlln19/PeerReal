@@ -10,7 +10,7 @@ class ProfileScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: const Color(0xFF05050A),
         elevation: 0,
-        title: const Text('Profil'),
+        title: const Text('Profile'),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings_outlined),
@@ -64,8 +64,8 @@ class ProfileScreen extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: const [
-                _ProfileStat(label: 'Momente', value: '12'),
-                _ProfileStat(label: 'Freunde', value: '8'),
+                _ProfileStat(label: 'Moments', value: '12'),
+                _ProfileStat(label: 'Friends', value: '8'),
                 _ProfileStat(label: 'Streak', value: '3'),
               ],
             ),
@@ -73,7 +73,7 @@ class ProfileScreen extends StatelessWidget {
             const SizedBox(height: 24),
 
             const Text(
-              'Letzte Momente',
+              'Latest moments',
               style: TextStyle(
                 color: Colors.white70,
                 fontSize: 16,
@@ -85,7 +85,7 @@ class ProfileScreen extends StatelessWidget {
             Expanded(
               child: Center(
                 child: Text(
-                  'Deine PeerReal Memories kommen später hier hin ✨',
+                  'Your PeerReal Memories will be added here later ✨',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.white38,

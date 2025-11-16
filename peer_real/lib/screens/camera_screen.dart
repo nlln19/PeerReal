@@ -172,7 +172,7 @@ class _CameraScreenState extends State<CameraScreen> {
                 ElevatedButton.icon(
                   onPressed: _setupCamerasAndInit,
                   icon: const Icon(Icons.refresh),
-                  label: const Text('Erneut versuchen'),
+                  label: const Text('Try again'),
                 ),
               ],
             ),
@@ -195,7 +195,7 @@ class _CameraScreenState extends State<CameraScreen> {
       backgroundColor: const Color(0xFF05050A),
       appBar: AppBar(
         backgroundColor: const Color(0xFF05050A),
-        title: Text(isStep1 ? 'Moment aufnehmen' : 'Selfie aufnehmen'),
+        title: Text(isStep1 ? 'Moment' : 'Selfie'),
       ),
       body: Column(
         children: [
@@ -248,7 +248,7 @@ class _CameraScreenState extends State<CameraScreen> {
             child: FloatingActionButton.extended(
               onPressed: _onCapturePressed,
               icon: const Icon(Icons.camera_alt),
-              label: Text(isStep1 ? 'Moment aufnehmen' : 'Selfie aufnehmen'),
+              label: Text(isStep1 ? 'Moment' : 'Selfie'),
             ),
           ),
         ],
