@@ -21,6 +21,11 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
   int _step = 1; // 1 = Hauptbild, 2 = Selfie
   Uint8List? _mainImage;
 
+  double _minZoomLevel = 1.0;
+  double _maxZoomLevel = 1.0;
+  double _currentZoomLevel = 1.0;
+  double _baseZoomLevel = 1.0;
+
   @override
   void initState() {
     super.initState();
@@ -37,7 +42,7 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
       _cameras = await availableCameras();
       if (_cameras.isEmpty) {
         setState(() {
-          _errorMessage = 'Keine Kamera gefunden.';
+          _errorMessage = 'Camera not found.';
           _initializing = false;
         });
         return;
@@ -100,7 +105,19 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
     });
 
     await initializeFuture;
+
+    // Zoom-Infos
+    try {
+      _minZoomLevel = await controller.getMinZoomLevel();
+      _maxZoomLevel = await controller.getMaxZoomLevel();
+      _currentZoomLevel = _minZoomLevel;
+      await controller.setZoomLevel(_currentZoomLevel);
+      print('🔍 Zoom range: $_minZoomLevel - $_maxZoomLevel');
+    } catch (e) {
+      print('❌ Fehler beim Lesen der Zoom-Level: $e');
+    }
   }
+
 
   Future<void> _onCapturePressed() async {
     final controller = _controller;
@@ -141,90 +158,105 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_errorMessage != null) {
-      return Scaffold(
-        backgroundColor: const Color(0xFF05050A),
-        appBar: AppBar(
-          title: const Text('Kamera'),
-          backgroundColor: const Color(0xFF05050A),
-        ),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.videocam_off,
-                    color: Colors.white54, size: 48),
-                const SizedBox(height: 16),
-                Text(
-                  _errorMessage!,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.white70),
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton.icon(
-                  onPressed: _setupCamerasAndInit,
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Erneut versuchen'),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    if (_initializing || _controller == null || _initializeControllerFuture == null) {
-      return const Scaffold(
-        backgroundColor: Color(0xFF05050A),
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    final controller = _controller!;
     final isStep1 = _step == 1;
 
     return Scaffold(
       backgroundColor: const Color(0xFF05050A),
       appBar: AppBar(
         backgroundColor: const Color(0xFF05050A),
-        title: Text(isStep1 ? 'Moment aufnehmen' : 'Selfie aufnehmen'),
+        title: Text(isStep1 ? 'Capture the moment' : 'Take a selfie'),
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: FutureBuilder(
-              future: _initializeControllerFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState != ConnectionState.done) {
-                  return const Center(child: CircularProgressIndicator());
-                }
+      // schützt vor Notch/Systemleisten
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Kamera-Preview
+            Expanded(
+              child: FutureBuilder(
+                future: _initializeControllerFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState != ConnectionState.done) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
 
-                final size = controller.value.previewSize;
-                final aspectRatio =
-                    size != null ? size.width / size.height : 3 / 4;
+                  final controller = _controller!;
+                  final previewSize = controller.value.previewSize;
+                  if (previewSize == null) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
 
-                return Center(
-                  child: AspectRatio(
-                    aspectRatio: aspectRatio,
-                    child: CameraPreview(controller),
-                  ),
-                );
-              },
+                  return LayoutBuilder(
+                    builder: (context, constraints) {
+                      final screenWidth = constraints.maxWidth;
+                      final screenHeight = constraints.maxHeight;
+
+                      final screenRatio = screenWidth / screenHeight;
+                      final previewRatio = previewSize.height / previewSize.width;
+                      final scale = previewRatio / screenRatio;
+
+                      return GestureDetector(
+                        onScaleStart: (details) {
+                          _baseZoomLevel = _currentZoomLevel;
+                        },
+                        onScaleUpdate: (details) async {
+                          // nur bei zwei Fingern zoomen
+                          if (details.pointerCount < 2) return;
+
+                          final newZoom = (_baseZoomLevel * details.scale)
+                              .clamp(_minZoomLevel, _maxZoomLevel);
+
+                          // kleine Änderungen ignorieren
+                          if ((newZoom - _currentZoomLevel).abs() < 0.01) return;
+
+                          _currentZoomLevel = newZoom;
+                          try {
+                            await controller.setZoomLevel(_currentZoomLevel);
+                          } catch (e) {
+                            print('❌ Fehler beim Setzen des Zooms: $e');
+                          }
+                        },
+                        child: Transform.scale(
+                          scale: scale,
+                          child: Center(
+                            child: AspectRatio(
+                              aspectRatio: previewRatio,
+                              child: CameraPreview(controller),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 24),
-            child: FloatingActionButton.extended(
-              onPressed: _onCapturePressed,
-              icon: const Icon(Icons.camera_alt),
-              label: Text(isStep1 ? 'Moment aufnehmen' : 'Selfie aufnehmen'),
+            const SizedBox(height: 16),
+
+            Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).padding.bottom + 16,
+              ),
+              child: FloatingActionButton.extended(
+                onPressed: _onCapturePressed,
+                icon: const Icon(Icons.camera_alt),
+                label: Text(isStep1 ? 'Capture the moment' : 'Take a selfie'),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
+
+class CameraPreviewPlaceholder extends StatelessWidget {
+  const CameraPreviewPlaceholder({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: CircularProgressIndicator(),
+    );
+  }
+}
+

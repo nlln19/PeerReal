@@ -1,4 +1,4 @@
-# peer_real
+# PeerReal
 
 A new Flutter project.
 

@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:peer_real/services/ditto_service.dart';
+import 'package:PeerReal/services/ditto_service.dart';
 
 class FeedPhotoTile extends StatefulWidget {
   final Map<String, dynamic> doc;

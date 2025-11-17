@@ -1,4 +1,4 @@
-package com.example.peer_real
+package com.example.PeerReal
 
 import io.flutter.embedding.android.FlutterActivity
 

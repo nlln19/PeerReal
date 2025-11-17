@@ -38,7 +38,7 @@ class _WebCameraScreenState extends State<WebCameraScreen> {
       _cameras = await availableCameras();
       if (_cameras.isEmpty) {
         setState(() {
-          _errorMessage = 'Keine Kamera gefunden.';
+          _errorMessage = 'Camera not found.';
           _initializing = false;
         });
         return;
@@ -172,7 +172,7 @@ class _WebCameraScreenState extends State<WebCameraScreen> {
                 ElevatedButton.icon(
                   onPressed: _setupCamerasAndInit,
                   icon: const Icon(Icons.refresh),
-                  label: const Text('Erneut versuchen'),
+                  label: const Text('Try again'),
                 ),
               ],
             ),
@@ -197,7 +197,7 @@ class _WebCameraScreenState extends State<WebCameraScreen> {
       backgroundColor: const Color(0xFF05050A),
       appBar: AppBar(
         backgroundColor: const Color(0xFF05050A),
-        title: Text(isStep1 ? 'Moment aufnehmen' : 'Selfie aufnehmen'),
+        title: Text(isStep1 ? 'Capture the Moment' : 'Take a Selfie'),
       ),
       body: Column(
         children: [
@@ -228,7 +228,7 @@ class _WebCameraScreenState extends State<WebCameraScreen> {
             child: FloatingActionButton.extended(
               onPressed: _onCapturePressed,
               icon: const Icon(Icons.camera_alt),
-              label: Text(isStep1 ? 'Moment aufnehmen' : 'Selfie aufnehmen'),
+              label: Text(isStep1 ? 'Capture the Moment' : 'Take a Selfie'),
             ),
           ),
         ],

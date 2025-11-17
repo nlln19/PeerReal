@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "peer_real" "\0"
+            VALUE "FileDescription", "PeerReal" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "peer_real" "\0"
+            VALUE "InternalName", "PeerReal" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2025 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "peer_real.exe" "\0"
-            VALUE "ProductName", "peer_real" "\0"
+            VALUE "OriginalFilename", "PeerReal.exe" "\0"
+            VALUE "ProductName", "PeerReal" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
