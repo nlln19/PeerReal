@@ -7,7 +7,7 @@ The app allows users to take two pictures with their webcam (moment + selfie) an
 
 ## Tech
 
-- **Flutter** (Web)
+- **Flutter**
 - **Dart**
 - **camera** Package
 - **Ditto Live** (P2P Sync)
