@@ -1,11 +1,11 @@
 {
-    "name": "peer_real",
-    "short_name": "peer_real",
+    "name": "PeerReal",
+    "short_name": "PeerReal",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "The P2P social image sending app using Ditto",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
