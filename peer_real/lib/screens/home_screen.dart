@@ -2,15 +2,14 @@ import 'package:ditto_live/ditto_live.dart';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import '../services/dql_builder.dart';
+import '../services/dql_builder_service.dart';
 import '../services/ditto_service.dart';
 import '../services/permission_service.dart';
 import '../screens/camera_screen.dart';
 import '../widgets/peer_real_post_card.dart';
 import '../screens/profile_screen.dart';
 import '../screens/friends_screen.dart';
-import 'package:google_fonts/google_fonts.dart';
-
+import '../services/logger_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,9 +20,8 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   Ditto? _ditto;
-  List<Map<String, dynamic>> _files = [];
+  final ScrollController _scrollController = ScrollController();
 
-  
   @override
   void initState() {
     super.initState();
@@ -32,17 +30,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _init() async {
     await PermissionService.requestP2PPermissions();
-    await DittoService.instance.init();
-    
+    final ditto = await DittoService.instance.init();
+    if (!mounted) return;
     setState(() {
-      _ditto = DittoService.instance.ditto;
-    }); 
-
-    _files = await DittoService.instance.loadFiles();
-    setState(() {});
+      _ditto = ditto;
+    });
   }
 
   Future<void> _openCamera() async {
+    logger.i('📸 Opening Camera Screen');
     final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const CameraScreen()),
@@ -50,28 +46,34 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (result == null) return;
 
-    // main + selfie
-    if (result is Map && result['main'] is Uint8List && result['selfie'] is Uint8List) {
+    // main + selfie (neuer Flow)
+    if (result is Map &&
+        result['main'] is Uint8List &&
+        result['selfie'] is Uint8List) {
       final mainBytes = result['main'] as Uint8List;
       final selfieBytes = result['selfie'] as Uint8List;
-      await DittoService.instance.addDualImageFromBytes(mainBytes, selfieBytes);
-      
+      await DittoService.instance.addDualImageFromBytes(
+        mainBytes,
+        selfieBytes,
+      );
     }
-    // Fallback: alter Single-Bild-Flow
+    // Fallback: altes Single-Bild
     else if (result is Uint8List) {
       await DittoService.instance.addImageFromBytes(result);
     }
-    _files = await DittoService.instance.loadFiles();
-    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    if(_ditto == null){
+    if (_ditto == null) {
       return Scaffold(
-        body: Center(child: CircularProgressIndicator(color: theme.colorScheme.primary)),
+        body: Center(
+          child: CircularProgressIndicator(
+            color: theme.colorScheme.primary,
+          ),
+        ),
       );
     }
 
@@ -82,7 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
         elevation: 0,
         centerTitle: true,
         title: const Text(
-          'PeerReal',
+          'PeerReal.',
           style: TextStyle(
             fontWeight: FontWeight.w700,
             letterSpacing: 0.5,
@@ -110,7 +112,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: const Icon(Icons.camera_alt),
       ),
 
-      // Bottom-Bar 
+      // Bottom-Bar
       bottomNavigationBar: BottomAppBar(
         color: const Color(0xFF0C0C15),
         shape: const CircularNotchedRectangle(),
@@ -125,7 +127,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 label: 'Feed',
                 selected: true,
                 onTap: () {
-                  // TODO: Funktionalität für Feed Button (idk was)
+                  logger.i('🏠 Home tapped');
+                  if (_scrollController.hasClients) {
+                    _scrollController.animateTo(
+                      0,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeOut,
+                    );
+                  }
                 },
               ),
               const SizedBox(width: 40),
@@ -134,6 +143,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 label: 'Profile',
                 selected: false,
                 onTap: () {
+                  logger.i('👤 Profile tapped');
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const ProfileScreen()),
@@ -145,8 +155,16 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
 
-      body: _files.isEmpty
-          ? const Center(
+      body: DqlBuilderService(
+        ditto: _ditto!,
+        query: "SELECT * FROM files ORDER BY createdAt DESC",
+        builder: (context, queryResult) {
+          final files = queryResult.items
+              .map((item) => Map<String, dynamic>.from(item.value))
+              .toList();
+
+          if (files.isEmpty) {
+            return const Center(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 40.0),
                 child: Column(
@@ -176,24 +194,29 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.only(bottom: 80),
-              itemCount: _files.length,
-              itemBuilder: (context, index) {
-                final doc = _files[index];
-                return PeerRealPostCard(
-                  key: ValueKey(doc['createdAt']),
-                  doc: doc,
-                );
-              },
-            ),
+            );
+          }
+
+          return ListView.builder(
+            controller: _scrollController,
+            padding: const EdgeInsets.only(bottom: 80),
+            itemCount: files.length,
+            itemBuilder: (context, index) {
+              final doc = files[index];
+              return PeerRealPostCard(
+                key: ValueKey(doc['createdAt']),
+                doc: doc,
+              );
+            },
+          );
+        },
+      ),
     );
   }
-  
 
   @override
   void dispose() {
+    _scrollController.dispose();
     DittoService.instance.dispose();
     super.dispose();
   }
@@ -242,4 +265,3 @@ class _BottomNavItem extends StatelessWidget {
     );
   }
 }
-
