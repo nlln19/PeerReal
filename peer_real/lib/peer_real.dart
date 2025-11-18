@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'screens/home_screen.dart';
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class PeerReal extends StatelessWidget {
+  const PeerReal({super.key});
 
   @override
   Widget build(BuildContext context) {
