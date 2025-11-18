@@ -97,7 +97,7 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
 
     final controller = CameraController(
       camera,
-      ResolutionPreset.medium,
+      ResolutionPreset.medium, // medium = 720p, zum data spare
       enableAudio: false,
     );
 
@@ -167,7 +167,13 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
       backgroundColor: const Color(0xFF05050A),
       appBar: AppBar(
         backgroundColor: const Color(0xFF05050A),
-        title: Text(isStep1 ? 'Capture the moment' : 'Take a selfie'),
+        title: 
+        Text(isStep1 ? 'Capture the moment' : 'Take a selfie',
+            style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          )
+        ),
       ),
       // schützt vor Notch/Systemleisten
       body: SafeArea(
@@ -239,10 +245,11 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
               padding: EdgeInsets.only(
                 bottom: MediaQuery.of(context).padding.bottom + 16,
               ),
-              child: FloatingActionButton.extended(
+              child: FloatingActionButton(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.black,
                 onPressed: _onCapturePressed,
-                icon: const Icon(Icons.camera_alt),
-                label: Text(isStep1 ? 'Capture the moment' : 'Take a selfie'),
+                child: const Icon(Icons.camera_alt),
               ),
             ),
           ],
