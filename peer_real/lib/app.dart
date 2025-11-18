@@ -20,13 +20,17 @@ class MyApp extends StatelessWidget {
             fontSize: 72,
             fontWeight: FontWeight.bold,
           ),
-          titleLarge: GoogleFonts.inter(fontSize: 30, fontStyle: FontStyle.italic,),
+          titleLarge: GoogleFonts.inter(
+            fontSize: 30,
+            fontStyle: FontStyle.italic,
+          ),
           bodyMedium: GoogleFonts.inter(),
           bodySmall: GoogleFonts.inter(),
         ),
       ),
-      
-      debugShowCheckedModeBanner: false,
+
+      debugShowCheckedModeBanner:
+          false, // Debug-Banner ausblenden (bitte nid lösche😭)
       home: const HomeScreen(),
     );
   }

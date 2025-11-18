@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:PeerReal/services/ditto_service.dart';
+import '../services/logger_service.dart';
 
 class PeerRealPostCard extends StatefulWidget {
   final Map<String, dynamic> doc;
@@ -37,10 +38,9 @@ class _PeerRealPostCardState extends State<PeerRealPostCard> {
       _selfieData = selfie;
     });
   } catch (e) {
-    print('❌ Error loading images in PostItem: $e');
+    logger.e('❌ Error loading images in PostItem: $e');
   }
 }
-
 
   @override
   Widget build(BuildContext context) {
@@ -58,7 +58,7 @@ class _PeerRealPostCardState extends State<PeerRealPostCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Kopfzeile: „You • 21:05“
+          // TODO: Kopfzeile: „You • 21:05“
           Row(
             children: [
               const CircleAvatar(
@@ -116,7 +116,7 @@ class _PeerRealPostCardState extends State<PeerRealPostCard> {
                                 _imageData!,
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) {
-                                  print('❌ Main image decode error: $error');
+                                  logger.e('❌ Main image decode error: $error');
                                   return const Center(
                                     child:
                                         Icon(Icons.broken_image, color: Colors.white70),
@@ -144,7 +144,7 @@ class _PeerRealPostCardState extends State<PeerRealPostCard> {
                                         _selfieData!,
                                         fit: BoxFit.cover,
                                         errorBuilder: (context, error, stackTrace) {
-                                          print('❌ Selfie decode error: $error');
+                                          logger.e('❌ Selfie decode error: $error');
                                           return const ColoredBox(
                                             color: Colors.black54,
                                             child: Icon(Icons.broken_image,

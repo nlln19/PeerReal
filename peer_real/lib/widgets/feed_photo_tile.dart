@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:PeerReal/services/ditto_service.dart';
+import '../services/logger_service.dart';
 
 class FeedPhotoTile extends StatefulWidget {
   final Map<String, dynamic> doc;
@@ -21,16 +22,16 @@ class _FeedPhotoTileState extends State<FeedPhotoTile> {
   @override
   void initState() {
     super.initState();
-    print('🖼️ Initializing ImageGridItem for: ${widget.doc['name']}');
+    logger.i('🖼️ Initializing ImageGridItem for: ${widget.doc['name']}');
     _loadImage();
   }
 
   Future<void> _loadImage() async {
-    print('🔄 Loading image for: ${widget.doc['name']}');
+    logger.i('🔄 Loading image for: ${widget.doc['name']}');
     
     try {
       final imageData = await DittoService.instance.getAttachmentData(widget.doc);
-      print('📊 Image data result: ${imageData?.length} bytes');
+      logger.i('📊 Image data result: ${imageData?.length} bytes');
       
       if (mounted) {
         setState(() {
@@ -38,13 +39,13 @@ class _FeedPhotoTileState extends State<FeedPhotoTile> {
         });
       }
     } catch (e) {
-      print('❌ Error in _loadImage: $e');
+      logger.e('❌ Error in _loadImage: $e');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    print('🎨 Building ImageGridItem with data: ${_imageData?.length} bytes');
+    logger.i('🎨 Building ImageGridItem with data: ${_imageData?.length} bytes');
     
     return Container(
       color: _imageData != null ? Colors.green : Colors.red,
@@ -53,7 +54,7 @@ class _FeedPhotoTileState extends State<FeedPhotoTile> {
               _imageData!,
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) {
-                print('❌ Image decode error: $error');
+                logger.e('❌ Image decode error: $error');
                 return const Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,

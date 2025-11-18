@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import '../services/logger_service.dart';
 
 class WebCameraScreen extends StatefulWidget {
   const WebCameraScreen({super.key});
@@ -47,7 +48,7 @@ class _WebCameraScreenState extends State<WebCameraScreen> {
       // Schritt 1: irgendeine Kamera (z.B. "back" / default)
       await _initForStep1();
     } catch (e) {
-      print('❌ WebCameraScreen: Fehler bei Kamera-Setup: $e');
+      logger.e('❌ WebCameraScreen: Fehler bei Kamera-Setup: $e');
       if (!mounted) return;
       setState(() {
         _errorMessage =
@@ -114,7 +115,7 @@ class _WebCameraScreenState extends State<WebCameraScreen> {
 
       final XFile file = await controller.takePicture();
       final bytes = await file.readAsBytes();
-      print('📸 WebCameraScreen: Step $_step captured ${bytes.length} bytes');
+      logger.i('📸 WebCameraScreen: Step $_step captured ${bytes.length} bytes');
 
       if (!mounted) return;
 
@@ -135,7 +136,7 @@ class _WebCameraScreenState extends State<WebCameraScreen> {
         }
       }
     } catch (e) {
-      print('❌ WebCameraScreen: Fehler beim Foto machen: $e');
+      logger.e('❌ WebCameraScreen: Fehler beim Foto machen: $e');
     }
   }
 

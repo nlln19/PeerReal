@@ -1,7 +1,10 @@
+// ignore_for_file: unused_field
+
 import 'dart:typed_data';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import '../services/logger_service.dart';
 
 class NativeCameraScreen extends StatefulWidget {
   const NativeCameraScreen({super.key});
@@ -50,7 +53,7 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
 
       await _initForStep1();
     } catch (e) {
-      print('❌ Fehler bei Kamera-Setup: $e');
+      logger.e('❌ Fehler bei Kamera-Setup: $e');
       if (!mounted) return;
       setState(() {
         _errorMessage =
@@ -112,13 +115,13 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
       _maxZoomLevel = await controller.getMaxZoomLevel();
       _currentZoomLevel = _minZoomLevel;
       await controller.setZoomLevel(_currentZoomLevel);
-      print('🔍 Zoom range: $_minZoomLevel - $_maxZoomLevel');
+      logger.i('🔍 Zoom range: $_minZoomLevel - $_maxZoomLevel');
     } catch (e) {
-      print('❌ Fehler beim Lesen der Zoom-Level: $e');
+      logger.e('❌ Fehler beim Lesen der Zoom-Level: $e');
     }
   }
 
-
+  // Bild aufnehmen
   Future<void> _onCapturePressed() async {
     final controller = _controller;
     if (controller == null) return;
@@ -128,7 +131,7 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
 
       final XFile file = await controller.takePicture();
       final bytes = await file.readAsBytes();
-      print('📸 Step $_step captured ${bytes.length} bytes');
+      logger.i('📸 Step $_step captured ${bytes.length} bytes');
 
       if (!mounted) return;
 
@@ -146,7 +149,7 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
         }
       }
     } catch (e) {
-      print('❌ Fehler beim Foto machen: $e');
+      logger.e('❌ Fehler beim Foto machen: $e');
     }
   }
 
@@ -212,7 +215,7 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
                           try {
                             await controller.setZoomLevel(_currentZoomLevel);
                           } catch (e) {
-                            print('❌ Fehler beim Setzen des Zooms: $e');
+                            logger.e('❌ Fehler beim Setzen des Zooms: $e');
                           }
                         },
                         child: Transform.scale(
