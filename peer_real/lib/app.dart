@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'screens/home_screen.dart';
 
 class MyApp extends StatelessWidget {
@@ -7,17 +8,25 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'PeerReal',
-      debugShowCheckedModeBanner: false,
+      title: "PeerReal",
       theme: ThemeData(
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF05050A),
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.white,
           brightness: Brightness.dark,
         ),
         useMaterial3: true,
+        textTheme: TextTheme(
+          displayLarge: const TextStyle(
+            fontSize: 72,
+            fontWeight: FontWeight.bold,
+          ),
+          titleLarge: GoogleFonts.inter(fontSize: 30, fontStyle: FontStyle.italic,),
+          bodyMedium: GoogleFonts.inter(),
+          bodySmall: GoogleFonts.inter(),
+        ),
       ),
+      
+      debugShowCheckedModeBanner: false,
       home: const HomeScreen(),
     );
   }

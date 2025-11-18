@@ -13,7 +13,7 @@ final logger = Logger();
 class DittoService {
   static final DittoService instance = DittoService._internal();
   Ditto? _ditto;
-  StoreObserver? _observer;
+  SyncSubscription? _subscription;
   List<Map<String, dynamic>> _files = [];
 
   DittoService._internal();
@@ -22,7 +22,7 @@ class DittoService {
   final String localPeerId = const Uuid().v4();
 
   // onFilesUpdated = callback to update UI
-  Future<Ditto> init(VoidCallback onFilesUpdated) async {
+  Future<Ditto> init() async {
     await Ditto.init();
 
     final identity = OnlinePlaygroundIdentity(
@@ -42,28 +42,43 @@ class DittoService {
     await _ditto!.store.execute("ALTER SYSTEM SET DQL_STRICT_MODE = false");
     _ditto!.startSync();
 
-    _observer = _ditto!.store.registerObserver(
-      "SELECT name, createdAt, attachment, selfieAttachment FROM files ORDER BY createdAt DESC",
-      onChange: (resultSet) {
-        _files = resultSet.items
-            .map((item) => Map<String, dynamic>.from(item.value))
-            .toList();
+    // _observer = _ditto!.store.registerObserver(
+    //   "SELECT name, createdAt, attachment, selfieAttachment FROM files ORDER BY createdAt DESC",
+    //   onChange: (resultSet) {
+    //     _files = resultSet.items
+    //         .map((item) => Map<String, dynamic>.from(item.value))
+    //         .toList();
 
-        onFilesUpdated();
-      },
+        
+    //   },
+    // );
+    _subscription = _ditto!.sync.registerSubscription(
+      "SELECT * FROM files",
     );
     return _ditto!;
   }
 
   // UI can call this
-  List<Map<String, dynamic>> getFiles() => _files;
+ Future<List<Map<String, dynamic>>> loadFiles() async {
+  final result = await _ditto!.store.execute("""
+    SELECT * FROM files ORDER BY createdAt DESC
+  """);
+
+  return result.items
+      .map((i) => Map<String, dynamic>.from(i.value))
+      .toList();
+}
+
 
   Future<Uint8List?> getImageBytes(Map<String, dynamic> doc) async {
-    final token = doc["attachment"];
+    final id = doc['_id'];
+    if (id == null) return null;
+
+    final token = doc['attachment'];
     if (token == null) return null;
 
     final completer = Completer<Uint8List>();
-
+  
     _ditto!.store.fetchAttachment(token, (event) {
       if (event is AttachmentFetchEventCompleted) {
         completer.complete(event.attachment.data);
@@ -239,10 +254,9 @@ Future<Uint8List?> getSelfieAttachmentData(
 }
 
   void dispose() {
-    _observer?.cancel();
+   // _observer?.cancel();
     _ditto?.stopSync();
     _ditto?.close();
   }
 }
-
 

@@ -1,12 +1,15 @@
+import 'package:ditto_live/ditto_live.dart';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import '../services/dql_builder.dart';
 import '../services/ditto_service.dart';
 import '../services/permission_service.dart';
 import '../screens/camera_screen.dart';
 import '../widgets/peer_real_post_card.dart';
 import '../screens/profile_screen.dart';
 import '../screens/friends_screen.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 
 class HomeScreen extends StatefulWidget {
@@ -17,8 +20,10 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  Ditto? _ditto;
   List<Map<String, dynamic>> _files = [];
 
+  
   @override
   void initState() {
     super.initState();
@@ -27,10 +32,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _init() async {
     await PermissionService.requestP2PPermissions();
-    await DittoService.instance.init(() {
-      setState(() => _files = DittoService.instance.getFiles());
-    });
-    setState(() => _files = DittoService.instance.getFiles());
+    await DittoService.instance.init();
+    
+    setState(() {
+      _ditto = DittoService.instance.ditto;
+    }); 
+
+    _files = await DittoService.instance.loadFiles();
+    setState(() {});
   }
 
   Future<void> _openCamera() async {
@@ -45,19 +54,27 @@ class _HomeScreenState extends State<HomeScreen> {
     if (result is Map && result['main'] is Uint8List && result['selfie'] is Uint8List) {
       final mainBytes = result['main'] as Uint8List;
       final selfieBytes = result['selfie'] as Uint8List;
-
       await DittoService.instance.addDualImageFromBytes(mainBytes, selfieBytes);
-      setState(() => _files = DittoService.instance.getFiles());
+      
     }
     // Fallback: alter Single-Bild-Flow
     else if (result is Uint8List) {
       await DittoService.instance.addImageFromBytes(result);
-      setState(() => _files = DittoService.instance.getFiles());
     }
+    _files = await DittoService.instance.loadFiles();
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    if(_ditto == null){
+      return Scaffold(
+        body: Center(child: CircularProgressIndicator(color: theme.colorScheme.primary)),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFF05050A),
       appBar: AppBar(
@@ -173,6 +190,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
     );
   }
+  
 
   @override
   void dispose() {
