@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:typed_data';
-import 'package:flutter/foundation.dart';     // <-- FIX 1
+import 'package:flutter/foundation.dart'; // <-- FIX 1
 import 'package:ditto_live/ditto_live.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -39,13 +39,13 @@ class DittoService {
 
     // FIX 2 — store items manually
     _observer = _ditto!.store.registerObserver(
-      "SELECT name, createdAt, attachment FROM files ORDER BY createdAt DESC",
+      "SELECT fileId, name, createdAt, attachment FROM files ORDER BY createdAt DESC",
       onChange: (resultSet) {
         _files = resultSet.items
             .map((item) => Map<String, dynamic>.from(item.value))
             .toList();
 
-        onFilesUpdated();  // tell UI to refresh
+        onFilesUpdated(); // tell UI to refresh
       },
     );
 
@@ -63,10 +63,13 @@ class DittoService {
 
     final token = await _ditto!.store.newAttachment(data);
 
+    final fileId = const Uuid().v4();
+
     await _ditto!.store.execute(
       "INSERT INTO COLLECTION files (attachment ATTACHMENT) VALUES (:doc)",
       arguments: {
         "doc": {
+          "fileID": fileId,
           "name": "Ameise.jpg",
           "createdAt": DateTime.now().millisecondsSinceEpoch,
           "attachment": token,
@@ -89,6 +92,67 @@ class DittoService {
     });
 
     return completer.future;
+  }
+
+  /// ---------- COMMENTS API ----------
+
+  Future<void> addComment({
+    required String fileId,
+    required String text,
+    required String author,
+  }) async {
+    if (_ditto == null) {
+      debugPrint("addComment called but _ditto is null");
+      return;
+    }
+
+    debugPrint("DittoService.addComment(fileId=$fileId, text='$text')");
+
+    try {
+      await _ditto!.store.execute(
+        "INSERT INTO COLLECTION comments (doc) VALUES (:doc)",
+        arguments: {
+          "doc": {
+            "fileId": fileId,
+            "text": text,
+            "author": author,
+            "createdAt": DateTime.now().millisecondsSinceEpoch,
+          },
+        },
+      );
+      debugPrint("DittoService.addComment finished");
+    } catch (e, st) {
+      debugPrint("ERROR in DittoService.addComment: $e\n$st");
+    }
+  }
+
+  /// Register an observer for comments of a single file.
+  /// We observe all comments and filter by fileId in Dart
+  /// (avoids needing query arguments support).
+  StoreObserver registerCommentsObserver(
+    String fileId,
+    void Function(List<Map<String, dynamic>> comments) onUpdate,
+  ) {
+    if (_ditto == null) {
+      throw StateError(
+        "DittoService not initialized before observing comments",
+      );
+    }
+
+    return _ditto!.store.registerObserver(
+      "SELECT fileId, text, author, createdAt FROM comments ORDER BY createdAt ASC",
+      onChange: (resultSet) {
+        final allComments = resultSet.items
+            .map((item) => Map<String, dynamic>.from(item.value))
+            .toList();
+
+        final filtered = allComments
+            .where((c) => c["fileId"] == fileId)
+            .toList();
+
+        onUpdate(filtered);
+      },
+    );
   }
 
   void dispose() {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/ditto_service.dart';
+import '../screens/comments_screen.dart';
 
 class FileListTile extends StatelessWidget {
   final Map<String, dynamic> doc;
@@ -20,12 +21,30 @@ class FileListTile extends StatelessWidget {
           return ListTile(
             title: Text(doc["name"] ?? "Unnamed"),
             subtitle: const Text("Loading image..."),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      CommentsScreen(fileDoc: doc, dittoService: dittoService),
+                ),
+              );
+            },
           );
         }
 
         return ListTile(
           leading: Image.memory(snap.data!, width: 56, height: 56),
           title: Text(doc["name"] ?? "Unnamed"),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) =>
+                    CommentsScreen(fileDoc: doc, dittoService: dittoService),
+              ),
+            );
+          },
         );
       },
     );
