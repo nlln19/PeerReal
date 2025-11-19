@@ -15,18 +15,18 @@ class PeerReal extends StatelessWidget {
           brightness: Brightness.dark,
         ),
         useMaterial3: true,
-        textTheme: TextTheme(
-          displayLarge: const TextStyle(
-            fontSize: 72,
-            fontWeight: FontWeight.bold,
-          ),
-          titleLarge: GoogleFonts.inter(
-            fontSize: 30,
-            fontStyle: FontStyle.italic,
-          ),
-          bodyMedium: GoogleFonts.inter(),
-          bodySmall: GoogleFonts.inter(),
-        ),
+      //   textTheme: TextTheme(
+      //     displayLarge: const TextStyle(
+      //       fontSize: 72,
+      //       fontWeight: FontWeight.bold,
+      //     ),
+      //     titleLarge: GoogleFonts.inter(
+      //       fontSize: 30,
+      //       fontStyle: FontStyle.italic,
+      //     ),
+      //     bodyMedium: GoogleFonts.inter(),
+      //     bodySmall: GoogleFonts.inter(),
+      //   ),
       ),
 
       debugShowCheckedModeBanner:
