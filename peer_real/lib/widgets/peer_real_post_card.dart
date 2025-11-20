@@ -19,28 +19,47 @@ class PeerRealPostCard extends StatefulWidget {
 class _PeerRealPostCardState extends State<PeerRealPostCard> {
   Uint8List? _imageData;
   Uint8List? _selfieData;
-
+  String? _authorName;
 
   @override
   void initState() {
     super.initState();
     _loadImage();
+    _loadAuthorName();
   }
 
   Future<void> _loadImage() async {
-  try {
-    final main = await DittoService.instance.getAttachmentData(widget.doc);
-    final selfie = await DittoService.instance.getSelfieAttachmentData(widget.doc);
+    try {
+      final main = await DittoService.instance.getAttachmentData(widget.doc);
+      final selfie =
+          await DittoService.instance.getSelfieAttachmentData(widget.doc);
 
-    if (!mounted) return;
-    setState(() {
-      _imageData = main;
-      _selfieData = selfie;
-    });
-  } catch (e) {
-    logger.e('❌ Error loading images in PostItem: $e');
+      if (!mounted) return;
+      setState(() {
+        _imageData = main;
+        _selfieData = selfie;
+      });
+    } catch (e) {
+      logger.e('❌ Error loading images in PeerRealPostCard: $e');
+    }
   }
-}
+
+  Future<void> _loadAuthorName() async {
+    try {
+      final authorId = widget.doc['author'] as String?;
+      if (authorId == null) return;
+
+      final name =
+          await DittoService.instance.getDisplayNameForPeer(authorId);
+
+      if (!mounted) return;
+      setState(() {
+        _authorName = name;
+      });
+    } catch (e) {
+      logger.e('❌ Error loading author name: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,12 +72,18 @@ class _PeerRealPostCardState extends State<PeerRealPostCard> {
         ? "${createdAt.hour.toString().padLeft(2, '0')}:${createdAt.minute.toString().padLeft(2, '0')}"
         : "";
 
+    final authorId = widget.doc['author'] as String?;
+    final isMe = authorId == DittoService.instance.localPeerId;
+
+    // Was im Header angezeigt wird
+    final displayName = isMe ? 'You': (_authorName ?? 'Unknown User');
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // TODO: Kopfzeile: „You • 21:05“
+          // Kopfzeile: „Name • 21:05“
           Row(
             children: [
               const CircleAvatar(
@@ -67,9 +92,9 @@ class _PeerRealPostCardState extends State<PeerRealPostCard> {
                 child: Icon(Icons.person, size: 18, color: Colors.white70),
               ),
               const SizedBox(width: 8),
-              const Text(
-                'You',
-                style: TextStyle(
+              Text(
+                displayName,
+                style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
                 ),
@@ -116,10 +141,11 @@ class _PeerRealPostCardState extends State<PeerRealPostCard> {
                                 _imageData!,
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) {
-                                  logger.e('❌ Main image decode error: $error');
+                                  logger.e(
+                                      '❌ Main image decode error: $error');
                                   return const Center(
-                                    child:
-                                        Icon(Icons.broken_image, color: Colors.white70),
+                                    child: Icon(Icons.broken_image,
+                                        color: Colors.white70),
                                   );
                                 },
                               ),
@@ -143,12 +169,15 @@ class _PeerRealPostCardState extends State<PeerRealPostCard> {
                                       child: Image.memory(
                                         _selfieData!,
                                         fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stackTrace) {
-                                          logger.e('❌ Selfie decode error: $error');
+                                        errorBuilder:
+                                            (context, error, stackTrace) {
+                                          logger.e(
+                                              '❌ Selfie decode error: $error');
                                           return const ColoredBox(
                                             color: Colors.black54,
                                             child: Icon(Icons.broken_image,
-                                                color: Colors.white70, size: 20),
+                                                color: Colors.white70,
+                                                size: 20),
                                           );
                                         },
                                       ),

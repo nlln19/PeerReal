@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:ditto_live/ditto_live.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:uuid/uuid.dart';
 import '../services/logger_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class DittoService {
   static final DittoService instance = DittoService._internal();
@@ -20,16 +22,23 @@ class DittoService {
     return d;
   }
 
-  final String localPeerId = const Uuid().v4();
+  late final String localPeerId;
+
+  String? _displayName;
+  String? get displayName => _displayName;
+
+  // peerId -> displayName(Nickname)
+  final Map<String, String> _profileNameCache = {};
 
   Future<Ditto> init() async {
     if (_ditto != null) return _ditto!;
 
+    await _initLocalPeerId();
     await Ditto.init();
 
-    final appId        = dotenv.env['DITTO_APP_ID']!;
-    final token        = dotenv.env['DITTO_PLAYGROUND_TOKEN']!;
-    final authUrl      = dotenv.env['DITTO_AUTH_URL']!;
+    final appId = dotenv.env['DITTO_APP_ID']!;
+    final token = dotenv.env['DITTO_PLAYGROUND_TOKEN']!;
+    final authUrl = dotenv.env['DITTO_AUTH_URL']!;
     final websocketUrl = dotenv.env['DITTO_WEBSOCKET_URL']!;
 
     final identity = OnlinePlaygroundIdentity(
@@ -39,11 +48,11 @@ class DittoService {
       enableDittoCloudSync: false,
     );
 
-    final ditto = await Ditto.open(identity:identity);
+    final ditto = await Ditto.open(identity: identity);
     logger.i('✅ Ditto opened with appId=$appId');
 
     ditto.updateTransportConfig((config) {
-      // Cloud-Verbindung
+      // Cloud-Verbindung für alle Plattformen
       config.connect.webSocketUrls.add(websocketUrl);
 
       // P2P nur auf Mobile
@@ -52,16 +61,175 @@ class DittoService {
       }
     });
 
-    await ditto.store.execute(
-      "ALTER SYSTEM SET DQL_STRICT_MODE = false",
-    );
+    await ditto.store.execute("ALTER SYSTEM SET DQL_STRICT_MODE = false");
 
     ditto.startSync();
     logger.i('🚀 Ditto sync started');
 
+    ditto.sync.registerSubscription('SELECT * FROM files');
+    ditto.sync.registerSubscription('SELECT * FROM profiles');
+    ditto.sync.registerSubscription('SELECT * FROM friendships');
+
     _ditto = ditto;
+
+    unawaited(_loadOwnProfileDisplayName());
+
     return ditto;
   }
+
+  Future<void> _loadOwnProfileDisplayName() async {
+    final d = _ditto;
+    if (d == null) return;
+
+    try {
+      final res = await d.store.execute(
+        '''
+        SELECT displayName FROM profiles
+        WHERE peerId = :id
+        ORDER BY createdAt DESC
+        LIMIT 1
+        ''',
+        arguments: {"id": localPeerId},
+      );
+
+      if (res.items.isNotEmpty) {
+        final value = res.items.first.value;
+        final name = value['displayName'] as String?;
+        if (name != null && name.isNotEmpty) {
+          _displayName = name;
+          _profileNameCache[localPeerId] = name;
+          logger.i('👤 Loaded existing profile name: $name');
+        }
+      }
+    } catch (e) {
+      logger.e('❌ Error loading own profile: $e');
+    }
+  }
+
+  // ---------- PROFILE / USERNAME-LOGIK ----------
+
+  Future<void> _initLocalPeerId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final existing = prefs.getString('localPeerId');
+
+    if (existing != null) {
+      localPeerId = existing;
+    } else {
+      final newId = const Uuid().v4();
+      localPeerId = newId;
+      await prefs.setString('localPeerId', newId);
+    }
+
+    logger.i('🆔 localPeerId = $localPeerId');
+  }
+
+  Future<bool> isDisplayNameAvailable(String displayName) async {
+    final d = _ditto;
+    if (d == null) return false;
+
+    final trimmed = displayName.trim();
+    if (trimmed.isEmpty) return false;
+
+    try {
+      final res = await d.store.execute(
+        '''
+        SELECT _id FROM profiles
+        WHERE lower(displayName) = lower(:name)
+        LIMIT 1
+        ''',
+        arguments: {"name": trimmed},
+      );
+
+      // Name ist frei, wenn keine Profile zurückkommen
+      final available = res.items.isEmpty;
+      logger.i('🔎 Name "$trimmed" available: $available');
+      return available;
+    } catch (e) {
+      logger.e('❌ Error in isDisplayNameAvailable: $e');
+      return false;
+    }
+  }
+
+  Future<bool> setDisplayName(String displayName) async {
+    final d = _ditto;
+    if (d == null) return false;
+
+    final trimmed = displayName.trim();
+    if (trimmed.isEmpty) return false;
+
+    // Doppel-Check auf Eindeutigkeit
+    if (!await isDisplayNameAvailable(trimmed)) {
+      logger.w('🚫 DisplayName "$trimmed" already taken');
+      return false;
+    }
+
+    await ensureProfile(displayName: trimmed);
+    _displayName = trimmed;
+    _profileNameCache[localPeerId] = trimmed;
+    logger.i('✅ DisplayName set to "$trimmed" for $localPeerId');
+    return true;
+  }
+
+  /// Schreibt/aktualisiert das Profil dieses Peers.
+  Future<void> ensureProfile({required String displayName}) async {
+    final d = _ditto;
+    if (d == null) return;
+
+    await d.store.execute(
+      '''
+      INSERT INTO COLLECTION profiles
+      DOCUMENTS (:doc)
+      ''',
+      arguments: {
+        "doc": {
+          // eigene Zuordnung Peer ↔ Profil
+          "peerId": localPeerId,
+          "displayName": displayName,
+          "createdAt": DateTime.now().millisecondsSinceEpoch,
+        },
+      },
+    );
+  }
+
+  /// Holt den Anzeigenamen für einen Peer (mit Cache).
+  Future<String> getDisplayNameForPeer(String peerId) async {
+    // Cache-Check
+    if (_profileNameCache.containsKey(peerId)) {
+      return _profileNameCache[peerId]!;
+    }
+
+    final d = _ditto;
+    if (d == null) return peerId;
+
+    try {
+      final res = await d.store.execute(
+        '''
+        SELECT displayName FROM profiles
+        WHERE peerId = :id
+        ORDER BY createdAt DESC
+        LIMIT 1
+        ''',
+        arguments: {"id": peerId},
+      );
+
+      if (res.items.isNotEmpty) {
+        final value = res.items.first.value;
+        final name = value['displayName'] as String?;
+        if (name != null && name.isNotEmpty) {
+          _profileNameCache[peerId] = name;
+          return name;
+        }
+      }
+
+      // Fallback: PeerId, falls es (noch) kein Profil gibt
+      return peerId;
+    } catch (e) {
+      logger.e('❌ Error in getDisplayNameForPeer: $e');
+      return peerId;
+    }
+  }
+
+  // ---------- POSTS / IMAGES ----------
 
   Future<void> addImageFromBytes(
     Uint8List imageBytes, {
@@ -77,11 +245,13 @@ class DittoService {
       logger.i('📸 Saving image: ${imageBytes.length} bytes');
 
       final attachment = await d.store.newAttachment(imageBytes);
-      logger.i('✅ Attachment created. id=${attachment.id}, len=${attachment.len}');
+      logger.i(
+        '✅ Attachment created. id=${attachment.id}, len=${attachment.len}',
+      );
 
       final newDocument = {
-        "name": fileName ??
-            'photo_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        "name":
+            fileName ?? 'photo_${DateTime.now().millisecondsSinceEpoch}.jpg',
         "createdAt": DateTime.now().millisecondsSinceEpoch,
         "attachment": attachment,
         "author": localPeerId,
@@ -115,17 +285,19 @@ class DittoService {
 
     try {
       logger.i(
-          '📸 Saving dual image: main=${mainBytes.length}, selfie=${selfieBytes.length} bytes');
+        '📸 Saving dual image: main=${mainBytes.length}, selfie=${selfieBytes.length} bytes',
+      );
 
       final mainAttachment = await d.store.newAttachment(mainBytes);
       final selfieAttachment = await d.store.newAttachment(selfieBytes);
 
       logger.i(
-          '✅ Attachments created: main=${mainAttachment.id}, selfie=${selfieAttachment.id}');
+        '✅ Attachments created: main=${mainAttachment.id}, selfie=${selfieAttachment.id}',
+      );
 
       final newDocument = {
-        "name": fileName ??
-            'peerreal_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        "name":
+            fileName ?? 'peerreal_${DateTime.now().millisecondsSinceEpoch}.jpg',
         "createdAt": DateTime.now().millisecondsSinceEpoch,
         "attachment": mainAttachment,
         "selfieAttachment": selfieAttachment,
@@ -149,7 +321,8 @@ class DittoService {
   }
 
   Future<Uint8List?> _loadAttachmentFromToken(
-      Map<String, dynamic>? attachmentToken) async {
+    Map<String, dynamic>? attachmentToken,
+  ) async {
     try {
       final d = _ditto;
       if (d == null) {
@@ -167,35 +340,34 @@ class DittoService {
       final completer = Completer<Uint8List?>();
 
       logger.i('🔄 Starting attachment fetch...');
-      final fetcher = d.store.fetchAttachment(
-        attachmentToken,
-        (event) async {
-          if (event is AttachmentFetchEventCompleted) {
-            logger.i('✅ Attachment fetch completed, loading data...');
-            try {
-              final data = await event.attachment.data;
-              logger.i('📦 Attachment data loaded: ${data.length} bytes');
-              if (!completer.isCompleted) {
-                completer.complete(data);
-              }
-            } catch (e) {
-              logger.e('❌ Error getting attachment data: $e');
-              if (!completer.isCompleted) {
-                completer.complete(null);
-              }
+      final fetcher = d.store.fetchAttachment(attachmentToken, (event) async {
+        if (event is AttachmentFetchEventCompleted) {
+          logger.i('✅ Attachment fetch completed, loading data...');
+          try {
+            final data = await event.attachment.data;
+            logger.i('📦 Attachment data loaded: ${data.length} bytes');
+            if (!completer.isCompleted) {
+              completer.complete(data);
             }
-          } else if (event is AttachmentFetchEventProgress) {
-            logger.i('📥 Download progress: ${event.downloadedBytes}/${event.totalBytes} bytes');
-          } else if (event is AttachmentFetchEventDeleted) {
-            logger.e('❌ Attachment was deleted');
+          } catch (e) {
+            logger.e('❌ Error getting attachment data: $e');
             if (!completer.isCompleted) {
               completer.complete(null);
             }
-          } else {
-            logger.i('ℹ️ Other fetch event: $event');
           }
-        },
-      );
+        } else if (event is AttachmentFetchEventProgress) {
+          logger.i(
+            '📥 Download progress: ${event.downloadedBytes}/${event.totalBytes} bytes',
+          );
+        } else if (event is AttachmentFetchEventDeleted) {
+          logger.e('❌ Attachment was deleted');
+          if (!completer.isCompleted) {
+            completer.complete(null);
+          }
+        } else {
+          logger.i('ℹ️ Other fetch event: $event');
+        }
+      });
 
       final result = await completer.future.timeout(
         const Duration(seconds: 30),
@@ -206,9 +378,11 @@ class DittoService {
         },
       );
 
-      logger.i(result != null
-          ? '🎉 Successfully loaded image'
-          : '💥 Failed to load image');
+      logger.i(
+        result != null
+            ? '🎉 Successfully loaded image'
+            : '💥 Failed to load image',
+      );
       return result;
     } catch (e) {
       logger.e('❌ Error in _loadAttachmentFromToken: $e');
@@ -222,9 +396,51 @@ class DittoService {
   }
 
   // Selfie-Bild
-  Future<Uint8List?> getSelfieAttachmentData(
-      Map<String, dynamic> doc) async {
+  Future<Uint8List?> getSelfieAttachmentData(Map<String, dynamic> doc) async {
     return _loadAttachmentFromToken(doc['selfieAttachment']);
+  }
+
+  // ---------- FREUNDSCHAFTEN ----------
+
+  Future<void> sendFriendRequest(String toPeerId) async {
+    final d = _ditto;
+    if (d == null) return;
+
+    final now = DateTime.now().millisecondsSinceEpoch;
+
+    await d.store.execute(
+      '''
+      INSERT INTO COLLECTION friendships
+      DOCUMENTS (:doc)
+      ''',
+      arguments: {
+        "doc": {
+          "fromPeerId": localPeerId,
+          "toPeerId": toPeerId,
+          "status": "pending",
+          "createdAt": now,
+          "updatedAt": now,
+        },
+      },
+    );
+  }
+
+  Future<void> acceptFriendRequest(String friendshipId) async {
+    final d = _ditto;
+    if (d == null) return;
+
+    await d.store.execute(
+      '''
+      UPDATE friendships
+      SET status = "accepted",
+          updatedAt = :now
+      WHERE _id = :id
+      ''',
+      arguments: {
+        "id": friendshipId,
+        "now": DateTime.now().millisecondsSinceEpoch,
+      },
+    );
   }
 
   void dispose() {
