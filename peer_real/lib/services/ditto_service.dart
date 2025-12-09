@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
 
 import 'package:ditto_live/ditto_live.dart';
 import 'package:flutter/foundation.dart';
@@ -397,27 +396,54 @@ class DittoService {
 
   // ---------- FREUNDSCHAFTEN ----------
 
-  Future<void> sendFriendRequest(String toPeerId) async {
+  Future<bool> sendFriendRequest(String toPeerId) async {
     final d = _ditto;
-    if (d == null) return;
+    if (d == null) return false;
 
-    final now = DateTime.now().millisecondsSinceEpoch;
+    try {
+      // Keine Duplikate
+      final existing = await d.store.execute(
+        '''
+        SELECT status, fromPeerId, toPeerId
+        FROM friendships
+        WHERE (fromPeerId = :me AND toPeerId = :other)
+           OR (fromPeerId = :other AND toPeerId = :me)
+        ORDER BY updatedAt DESC
+        LIMIT 1
+        ''',
+        arguments: {'me': localPeerId, 'other': toPeerId},
+      );
 
-    await d.store.execute(
-      '''
-      INSERT INTO COLLECTION friendships
-      DOCUMENTS (:doc)
-      ''',
-      arguments: {
-        "doc": {
-          "fromPeerId": localPeerId,
-          "toPeerId": toPeerId,
-          "status": 'pending',
-          "createdAt": now,
-          "updatedAt": now,
+      if (existing.items.isNotEmpty) {
+        final doc = existing.items.first.value;
+        final status = doc['status'] as String? ?? '';
+        if (status == 'accepted' || status == 'pending') {
+          logger.i('Skip sending request to $toPeerId, status=$status');
+          return false;
+        }
+      }
+
+      final now = DateTime.now().millisecondsSinceEpoch;
+      await d.store.execute(
+        '''
+        INSERT INTO COLLECTION friendships
+        DOCUMENTS (:doc)
+        ''',
+        arguments: {
+          "doc": {
+            "fromPeerId": localPeerId,
+            "toPeerId": toPeerId,
+            "status": "pending",
+            "createdAt": now,
+            "updatedAt": now,
+          },
         },
-      },
-    );
+      );
+      return true;
+    } catch (e) {
+      logger.e('Error sending friend request to $toPeerId: $e');
+      return false;
+    }
   }
 
   Future<void> acceptFriendRequest(friendshipId) async {

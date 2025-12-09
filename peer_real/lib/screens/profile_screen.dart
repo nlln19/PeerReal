@@ -29,7 +29,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _pickDisplayName(BuildContext context) async {
-    final controller = TextEditingController(text: _displayName ?? '');
+    final controller = TextEditingController(text: '');
     final name = await showDialog<String>(
       context: context,
       builder: (context) {
@@ -55,7 +55,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       },
     );
 
-    if (name == null || name.trim().isEmpty) return;
+    if (name == null || name == '' || name.trim().isEmpty) return;
 
     final ok = await DittoService.instance.setDisplayName(name);
     if (!mounted) return;
