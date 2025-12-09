@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:ditto_live/ditto_live.dart';
 import 'package:flutter/foundation.dart';
@@ -411,7 +412,7 @@ class DittoService {
         "doc": {
           "fromPeerId": localPeerId,
           "toPeerId": toPeerId,
-          "status": "pending",
+          "status": 'pending',
           "createdAt": now,
           "updatedAt": now,
         },
@@ -419,14 +420,14 @@ class DittoService {
     );
   }
 
-  Future<void> acceptFriendRequest(String friendshipId) async {
+  Future<void> acceptFriendRequest(friendshipId) async {
     final d = _ditto;
     if (d == null) return;
 
     await d.store.execute(
       '''
       UPDATE friendships
-      SET status = "accepted",
+      SET status = 'accepted',
           updatedAt = :now
       WHERE _id = :id
       ''',

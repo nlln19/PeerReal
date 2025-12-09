@@ -226,10 +226,11 @@ class _WebCameraScreenState extends State<WebCameraScreen> {
           const SizedBox(height: 16),
           Padding(
             padding: const EdgeInsets.only(bottom: 24),
-            child: FloatingActionButton.extended(
+            child: FloatingActionButton(
               onPressed: _onCapturePressed,
-              icon: const Icon(Icons.camera_alt),
-              label: Text(isStep1 ? 'Capture the Moment' : 'Take a Selfie'),
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.black,
+              child: const Icon(Icons.camera_alt),
             ),
           ),
         ],

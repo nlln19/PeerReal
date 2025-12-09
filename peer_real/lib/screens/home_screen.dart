@@ -46,7 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (result == null) return;
 
-    // main + selfie (neuer Flow)
+    // main + selfie
     if (result is Map &&
         result['main'] is Uint8List &&
         result['selfie'] is Uint8List) {
@@ -157,7 +157,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
       body: DqlBuilderService(
         ditto: _ditto!,
-        query: "SELECT * FROM files ORDER BY createdAt DESC",
+        query: "SELECT * FROM reals ORDER BY createdAt DESC",
         builder: (context, queryResult) {
           final files = queryResult.items
               .map((item) => Map<String, dynamic>.from(item.value))

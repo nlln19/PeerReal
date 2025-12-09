@@ -1,3 +1,4 @@
+import 'package:PeerReal/services/logger_service.dart';
 import 'package:flutter/material.dart';
 import 'package:ditto_live/ditto_live.dart';
 import '../services/dql_builder_service.dart';
@@ -25,19 +26,6 @@ class _FriendsScreenState extends State<FriendsScreen> {
         backgroundColor: const Color(0xFF05050A),
         elevation: 0,
         title: const Text('Friends'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.person_add_alt_1_outlined),
-            onPressed: () {
-              // Optional: eigenen Add-Flow später
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Freunde hinzufügen kommt über die Suche 😜'),
-                ),
-              );
-            },
-          ),
-        ],
       ),
       body: Column(
         children: [
@@ -95,8 +83,8 @@ class _FriendsScreenState extends State<FriendsScreen> {
           Expanded(
             child: _tabIndex == 0
                 ? (_searchTerm.isEmpty
-                    ? _buildFriendsList(ditto, me)
-                    : _buildProfileSearchResults(ditto, me))
+                      ? _buildFriendsList(ditto, me)
+                      : _buildProfileSearchResults(ditto, me))
                 : _buildRequestsList(ditto, me),
           ),
         ],
@@ -104,7 +92,6 @@ class _FriendsScreenState extends State<FriendsScreen> {
     );
   }
 
-  /// Hilfsfunktion: gibt den "anderen" Peer einer Freundschaft zurück
   String _otherPeerId(Map<String, dynamic> friendship, String me) {
     final from = friendship['fromPeerId'] as String?;
     final to = friendship['toPeerId'] as String?;
@@ -117,7 +104,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
       ditto: ditto,
       query: '''
         SELECT * FROM friendships
-        WHERE status = "accepted"
+        WHERE status = 'accepted'
           AND (fromPeerId = :me OR toPeerId = :me)
         ORDER BY updatedAt DESC
       ''',
@@ -138,10 +125,8 @@ class _FriendsScreenState extends State<FriendsScreen> {
 
         return ListView.separated(
           itemCount: friends.length,
-          separatorBuilder: (_, __) => const Divider(
-            color: Colors.white10,
-            height: 1,
-          ),
+          separatorBuilder: (_, __) =>
+              const Divider(color: Colors.white10, height: 1),
           itemBuilder: (context, index) {
             final friendship = friends[index];
             final otherId = _otherPeerId(friendship, me);
@@ -166,7 +151,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                     style: TextStyle(color: Colors.white38, fontSize: 12),
                   ),
                   onTap: () {
-                    // später: Friend-Profile öffnen
+                    // später Friend-Profile öffnen
                   },
                 );
               },
@@ -182,22 +167,21 @@ class _FriendsScreenState extends State<FriendsScreen> {
     return DqlBuilderService(
       ditto: ditto,
       query: '''
-        SELECT * FROM profiles
-        ORDER BY displayName ASC
-      ''',
+      SELECT * FROM profiles
+      ORDER BY displayName ASC
+    ''',
       builder: (context, result) {
         var profiles = result.items
             .map((item) => Map<String, dynamic>.from(item.value))
             .toList();
 
-        // eigenen Eintrag rausfiltern
-        profiles.removeWhere((p) => p['_id'] == me);
+        // eigenen Eintrag rausfiltern (über peerId)
+        profiles.removeWhere((p) => p['peerId'] == me);
 
         // nach displayName filtern
         if (_searchTerm.isNotEmpty) {
           profiles = profiles.where((p) {
-            final name =
-                (p['displayName'] as String? ?? '').toLowerCase();
+            final name = (p['displayName'] ?? '').toLowerCase();
             return name.contains(_searchTerm);
           }).toList();
         }
@@ -213,39 +197,33 @@ class _FriendsScreenState extends State<FriendsScreen> {
 
         return ListView.separated(
           itemCount: profiles.length,
-          separatorBuilder: (_, __) => const Divider(
-            color: Colors.white10,
-            height: 1,
-          ),
+          separatorBuilder: (_, __) =>
+              const Divider(color: Colors.white10, height: 1),
           itemBuilder: (context, index) {
             final p = profiles[index];
-            final peerId = p['_id'] as String? ?? '';
-            final name = p['displayName'] as String? ?? peerId;
+            final peerId = p['peerId'];
+            final name = p['displayName'] ?? peerId;
 
             return ListTile(
               leading: const CircleAvatar(
                 backgroundColor: Colors.white12,
                 child: Icon(Icons.person_add, color: Colors.white70),
               ),
-              title: Text(
-                name,
-                style: const TextStyle(color: Colors.white),
-              ),
+              title: Text(name, style: const TextStyle(color: Colors.white)),
               subtitle: Text(
                 peerId,
-                style:
-                    const TextStyle(color: Colors.white24, fontSize: 11),
+                style: const TextStyle(color: Colors.white24, fontSize: 11),
               ),
               trailing: IconButton(
-                icon: const Icon(Icons.person_add_alt_1,
-                    color: Colors.greenAccent),
+                icon: const Icon(
+                  Icons.person_add_alt_1,
+                  color: Colors.greenAccent,
+                ),
                 onPressed: () async {
                   await DittoService.instance.sendFriendRequest(peerId);
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Friend request sent to $name'),
-                      ),
+                      SnackBar(content: Text('Friend request sent to $name')),
                     );
                   }
                 },
@@ -261,15 +239,19 @@ class _FriendsScreenState extends State<FriendsScreen> {
     return DqlBuilderService(
       ditto: ditto,
       query: '''
-        SELECT * FROM friendships
-        WHERE toPeerId = :me AND status = "pending"
-        ORDER BY createdAt DESC
-      ''',
-      queryArgs: {'me': me},
+      SELECT * FROM friendships
+      ORDER BY createdAt DESC
+    ''',
       builder: (context, result) {
         var requests = result.items
             .map((item) => Map<String, dynamic>.from(item.value))
             .toList();
+
+        requests = requests.where((req) {
+          final to = req['toPeerId'];
+          final status = req['status'] as String?;
+          return to == me && status == 'pending';
+        }).toList();
 
         if (requests.isEmpty) {
           return const Center(
@@ -282,20 +264,17 @@ class _FriendsScreenState extends State<FriendsScreen> {
 
         return ListView.separated(
           itemCount: requests.length,
-          separatorBuilder: (_, __) => const Divider(
-            color: Colors.white10,
-            height: 1,
-          ),
+          separatorBuilder: (_, __) =>
+              const Divider(color: Colors.white10, height: 1),
           itemBuilder: (context, index) {
             final req = requests[index];
-            final fromPeerId = req['fromPeerId'] as String? ?? 'Unknown';
+            final friendshipId = req['_id'];
+            final fromPeerId = req['fromPeerId'];
 
             return FutureBuilder<String>(
-              future:
-                  DittoService.instance.getDisplayNameForPeer(fromPeerId),
+              future: DittoService.instance.getDisplayNameForPeer(fromPeerId),
               builder: (context, snap) {
-                final name =
-                    snap.data ?? fromPeerId; // falls Profil noch nicht da
+                final name = snap.data ?? fromPeerId;
 
                 return ListTile(
                   leading: const CircleAvatar(
@@ -310,7 +289,22 @@ class _FriendsScreenState extends State<FriendsScreen> {
                     'sent you a friend request',
                     style: TextStyle(color: Colors.white38, fontSize: 12),
                   ),
-                  // später: Accept/Decline
+                  trailing: IconButton(
+                    icon: const Icon(Icons.check, color: Colors.greenAccent),
+                    onPressed: () async {
+                            logger.i(
+                              'Accepting friend request from $fromPeerId (friendshipId: $friendshipId)',
+                            );
+                            await DittoService.instance.acceptFriendRequest(
+                              friendshipId,
+                            );
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Friends with $name')),
+                            );
+                          }
+                          },
+                  ),
                 );
               },
             );
