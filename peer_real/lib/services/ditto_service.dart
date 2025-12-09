@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:ditto_live/ditto_live.dart';
 import 'package:flutter/foundation.dart';
@@ -66,7 +65,7 @@ class DittoService {
     ditto.startSync();
     logger.i('🚀 Ditto sync started');
 
-    ditto.sync.registerSubscription('SELECT * FROM files');
+    ditto.sync.registerSubscription('SELECT * FROM reals');
     ditto.sync.registerSubscription('SELECT * FROM profiles');
     ditto.sync.registerSubscription('SELECT * FROM friendships');
 
@@ -157,7 +156,6 @@ class DittoService {
     final trimmed = displayName.trim();
     if (trimmed.isEmpty) return false;
 
-    // Doppel-Check auf Eindeutigkeit
     if (!await isDisplayNameAvailable(trimmed)) {
       logger.w('🚫 DisplayName "$trimmed" already taken');
       return false;
@@ -170,7 +168,6 @@ class DittoService {
     return true;
   }
 
-  /// Schreibt/aktualisiert das Profil dieses Peers.
   Future<void> ensureProfile({required String displayName}) async {
     final d = _ditto;
     if (d == null) return;
@@ -191,7 +188,6 @@ class DittoService {
     );
   }
 
-  /// Holt den Anzeigenamen für einen Peer (mit Cache).
   Future<String> getDisplayNameForPeer(String peerId) async {
     // Cache-Check
     if (_profileNameCache.containsKey(peerId)) {
@@ -260,7 +256,7 @@ class DittoService {
 
       await d.store.execute(
         '''
-        INSERT INTO COLLECTION files (attachment ATTACHMENT)
+        INSERT INTO COLLECTION reals (attachment ATTACHMENT)
         VALUES (:newDocument)
         ''',
         arguments: {"newDocument": newDocument},
@@ -308,7 +304,7 @@ class DittoService {
 
       await d.store.execute(
         '''
-        INSERT INTO COLLECTION files (attachment ATTACHMENT, selfieAttachment ATTACHMENT)
+        INSERT INTO COLLECTION reals (attachment ATTACHMENT, selfieAttachment ATTACHMENT)
         VALUES (:newDocument)
         ''',
         arguments: {"newDocument": newDocument},
@@ -390,12 +386,10 @@ class DittoService {
     }
   }
 
-  // Hauptbild
   Future<Uint8List?> getAttachmentData(Map<String, dynamic> doc) async {
     return _loadAttachmentFromToken(doc['attachment']);
   }
 
-  // Selfie-Bild
   Future<Uint8List?> getSelfieAttachmentData(Map<String, dynamic> doc) async {
     return _loadAttachmentFromToken(doc['selfieAttachment']);
   }
