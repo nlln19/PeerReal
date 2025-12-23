@@ -1,4 +1,5 @@
 import 'package:ditto_live/ditto_live.dart';
+import 'package:flutter/cupertino.dart';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -21,6 +22,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   Ditto? _ditto;
   final ScrollController _scrollController = ScrollController();
+  int _feedFilter = 0; // 0 = All, 1 = Friends
 
   @override
   void initState() {
@@ -76,6 +78,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
     }
+
+    final me = DittoService.instance.localPeerId;
 
     return Scaffold(
       backgroundColor: const Color(0xFF05050A),
@@ -154,62 +158,137 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
+      body: Column(
+        children: [
+          const SizedBox(height: 8),
 
-      body: DqlBuilderService(
-        ditto: _ditto!,
-        query: "SELECT * FROM reals ORDER BY createdAt DESC",
-        builder: (context, queryResult) {
-          final files = queryResult.items
-              .map((item) => Map<String, dynamic>.from(item.value))
-              .toList();
-
-          if (files.isEmpty) {
-            return const Center(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 40.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.camera_alt_outlined,
-                        size: 72, color: Colors.white24),
-                    SizedBox(height: 16),
-                    Text(
-                      'Share your first PeerReal Moment',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      'Tap the camera button to take your PeerReal moment!😜',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white38,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: CupertinoSlidingSegmentedControl<int>(
+              backgroundColor: const Color(0xFF11111A),
+              thumbColor: Colors.white,
+              groupValue: _feedFilter,
+              children: const {
+                0: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                  child: Text(
+                    'All',
+                    style: TextStyle(fontSize: 13),
+                  ),
                 ),
-              ),
-            );
-          }
+                1: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                  child: Text(
+                    'Friends',
+                    style: TextStyle(fontSize: 13),
+                  ),
+                ),
+              },
+              onValueChanged: (value) {
+                if (value == null) return;
+                setState(() {
+                  _feedFilter = value;
+                });
+              },
+            ),
+          ),
 
-          return ListView.builder(
-            controller: _scrollController,
-            padding: const EdgeInsets.only(bottom: 80),
-            itemCount: files.length,
-            itemBuilder: (context, index) {
-              final doc = files[index];
-              return PeerRealPostCard(
-                key: ValueKey(doc['createdAt']),
-                doc: doc,
-              );
-            },
-          );
-        },
+          const SizedBox(height: 8),
+
+          Expanded(
+            child: DqlBuilderService(
+              ditto: _ditto!,
+              query: '''
+                SELECT * FROM friendships
+                WHERE status = 'accepted'
+                  AND (fromPeerId = :me OR toPeerId = :me)
+              ''',
+              queryArgs: {'me': me},
+              builder: (context, friendsResult) {
+                final friendDocs = friendsResult.items
+                    .map((item) => Map<String, dynamic>.from(item.value))
+                    .toList();
+
+                final friendIds = <String>{};
+                for (final f in friendDocs) {
+                  final from = f['fromPeerId'] as String?;
+                  final to = f['toPeerId'] as String?;
+                  if (from != null && from != me) friendIds.add(from);
+                  if (to != null && to != me) friendIds.add(to);
+                }
+
+                return DqlBuilderService(
+                  ditto: _ditto!,
+                  query: '''
+                    SELECT * FROM reals
+                    ORDER BY createdAt DESC
+                  ''',
+                  builder: (context, realsResult) {
+                    var reals = realsResult.items
+                        .map((item) =>
+                            Map<String, dynamic>.from(item.value))
+                        .toList();
+
+                    if (_feedFilter == 1) {
+                      reals = reals.where((doc) {
+                        final author = doc['author'] as String?;
+                        if (author == null) return false;
+                        return author == me || friendIds.contains(author);
+                      }).toList();
+                    }
+
+                    if (reals.isEmpty) {
+                      return const Center(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 40.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.camera_alt_outlined,
+                                  size: 72, color: Colors.white24),
+                              SizedBox(height: 16),
+                              Text(
+                                'Share your first PeerReal Moment',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                'Tap the camera button to take your PeerReal moment!😜',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.white38,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+
+                    return ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.only(bottom: 80),
+                      itemCount: reals.length,
+                      itemBuilder: (context, index) {
+                        final doc = reals[index];
+                        return PeerRealPostCard(
+                          key: ValueKey(doc['createdAt']),
+                          doc: doc,
+                        );
+                      },
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
