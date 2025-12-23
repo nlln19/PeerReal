@@ -106,7 +106,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen> {
                   label: 'Friends',
                   value: _friendsCount?.toString() ?? '–',
                 ),
-                const _ProfileStat(label: 'Streak', value: '–'), // TODO:
+                const _ProfileStat(label: 'Streak', value: '0'), // TODO:
               ],
             ),
 
@@ -154,6 +154,7 @@ class _FriendProfileScreenState extends State<FriendProfileScreen> {
                       return PeerRealPostCard(
                         key: ValueKey(doc['_id'] ?? doc['createdAt']),
                         doc: doc,
+                        showAuthorHeader: false,
                       );
                     },
                   );

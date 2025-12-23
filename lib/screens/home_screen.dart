@@ -267,6 +267,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         return PeerRealPostCard(
                           key: ValueKey(doc['createdAt']),
                           doc: doc,
+                          showAuthorHeader: true,
                         );
                       },
                     );

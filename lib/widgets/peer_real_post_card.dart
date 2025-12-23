@@ -1,17 +1,20 @@
 import 'dart:typed_data';
 
+import 'package:PeerReal/screens/friend_profile_screen.dart';
+import 'package:PeerReal/screens/profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:PeerReal/services/ditto_service.dart';
 import '../services/logger_service.dart';
-import '../screens/profile_screen.dart';
-import '../screens/friend_profile_screen.dart';
 
 class PeerRealPostCard extends StatefulWidget {
   final Map<String, dynamic> doc;
 
+  final bool showAuthorHeader; // Im Feed = true, Profil / FriendProfile = false
+
   const PeerRealPostCard({
     super.key,
     required this.doc,
+    this.showAuthorHeader = true,
   });
 
   @override
@@ -30,8 +33,8 @@ class _PeerRealPostCardState extends State<PeerRealPostCard> {
   void initState() {
     super.initState();
     _authorId = widget.doc['author'] as String? ?? '';
-    _isMe = _authorId.isNotEmpty &&
-        _authorId == DittoService.instance.localPeerId;
+    _isMe =
+        _authorId.isNotEmpty && _authorId == DittoService.instance.localPeerId;
 
     _loadAuthorName();
     _loadImage();
@@ -40,8 +43,7 @@ class _PeerRealPostCardState extends State<PeerRealPostCard> {
   Future<void> _loadAuthorName() async {
     if (_authorId.isEmpty) return;
     try {
-      final name =
-          await DittoService.instance.getDisplayNameForPeer(_authorId);
+      final name = await DittoService.instance.getDisplayNameForPeer(_authorId);
       if (!mounted) return;
       setState(() {
         _authorName = name;
@@ -53,10 +55,10 @@ class _PeerRealPostCardState extends State<PeerRealPostCard> {
 
   Future<void> _loadImage() async {
     try {
-      final main =
-          await DittoService.instance.getAttachmentData(widget.doc);
-      final selfie =
-          await DittoService.instance.getSelfieAttachmentData(widget.doc);
+      final main = await DittoService.instance.getAttachmentData(widget.doc);
+      final selfie = await DittoService.instance.getSelfieAttachmentData(
+        widget.doc,
+      );
 
       if (!mounted) return;
       setState(() {
@@ -102,55 +104,55 @@ class _PeerRealPostCardState extends State<PeerRealPostCard> {
         ? "${createdAt.hour.toString().padLeft(2, '0')}:${createdAt.minute.toString().padLeft(2, '0')}"
         : "";
 
-    final displayName = _authorName ??
-        (_isMe ? 'You' : (_authorId.isNotEmpty
-            ? _authorId.substring(0, 8)
-            : 'Unknown'));
+    final displayName =
+        _authorName ??
+        (_isMe
+            ? 'You'
+            : (_authorId.isNotEmpty ? _authorId.substring(0, 8) : 'Unknown'));
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          InkWell(
-            borderRadius: BorderRadius.circular(24),
-            onTap: _openProfile,
-            child: Row(
-              children: [
-                const CircleAvatar(
-                  radius: 16,
-                  backgroundColor: Colors.white12,
-                  child: Icon(Icons.person, size: 18, color: Colors.white70),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  displayName,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
+          if (widget.showAuthorHeader) ...[
+            InkWell(
+              borderRadius: BorderRadius.circular(24),
+              onTap: _openProfile,
+              child: Row(
+                children: [
+                  const CircleAvatar(
+                    radius: 16,
+                    backgroundColor: Colors.white12,
+                    child: Icon(Icons.person, size: 18, color: Colors.white70),
                   ),
-                ),
-                if (timeLabel.isNotEmpty) ...[
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 8),
                   Text(
-                    '• $timeLabel',
+                    displayName,
                     style: const TextStyle(
-                      color: Colors.white54,
-                      fontSize: 12,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
+                  if (timeLabel.isNotEmpty) ...[
+                    const SizedBox(width: 6),
+                    Text(
+                      '• $timeLabel',
+                      style: const TextStyle(
+                        color: Colors.white54,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
+            const SizedBox(height: 8),
+          ],
 
           Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: 420,
-                maxHeight: 560,
-              ),
+              constraints: const BoxConstraints(maxWidth: 420, maxHeight: 560),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(18),
                 child: AspectRatio(
@@ -172,8 +174,7 @@ class _PeerRealPostCardState extends State<PeerRealPostCard> {
                                 _imageData!,
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) {
-                                  logger.e(
-                                      '❌ Main image decode error: $error');
+                                  logger.e('❌ Main image decode error: $error');
                                   return const Center(
                                     child: Icon(
                                       Icons.broken_image,
@@ -183,7 +184,7 @@ class _PeerRealPostCardState extends State<PeerRealPostCard> {
                                 },
                               ),
 
-                              // Selfie oben rechts (falls vorhanden)
+                              // Selfie oben rechts
                               if (_selfieData != null)
                                 Positioned(
                                   right: 12,
@@ -204,17 +205,18 @@ class _PeerRealPostCardState extends State<PeerRealPostCard> {
                                         fit: BoxFit.cover,
                                         errorBuilder:
                                             (context, error, stackTrace) {
-                                          logger.e(
-                                              '❌ Selfie decode error: $error');
-                                          return const ColoredBox(
-                                            color: Colors.black54,
-                                            child: Icon(
-                                              Icons.broken_image,
-                                              color: Colors.white70,
-                                              size: 20,
-                                            ),
-                                          );
-                                        },
+                                              logger.e(
+                                                '❌ Selfie decode error: $error',
+                                              );
+                                              return const ColoredBox(
+                                                color: Colors.black54,
+                                                child: Icon(
+                                                  Icons.broken_image,
+                                                  color: Colors.white70,
+                                                  size: 20,
+                                                ),
+                                              );
+                                            },
                                       ),
                                     ),
                                   ),

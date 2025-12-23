@@ -198,6 +198,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       return PeerRealPostCard(
                         key: ValueKey(doc['_id'] ?? doc['createdAt']),
                         doc: doc,
+                        showAuthorHeader: false,
                       );
                     },
                   );
