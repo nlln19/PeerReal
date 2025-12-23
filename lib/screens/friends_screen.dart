@@ -1,5 +1,4 @@
 import 'package:PeerReal/screens/friend_profile_screen.dart';
-import 'package:PeerReal/services/logger_service.dart';
 import 'package:flutter/material.dart';
 import 'package:ditto_live/ditto_live.dart';
 import '../services/dql_builder_service.dart';

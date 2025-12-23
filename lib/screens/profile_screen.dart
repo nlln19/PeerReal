@@ -1,4 +1,5 @@
 import 'package:PeerReal/services/dql_builder_service.dart';
+import 'package:PeerReal/widgets/peer_real_post_card.dart';
 import 'package:ditto_live/ditto_live.dart';
 import 'package:flutter/material.dart';
 import 'package:PeerReal/services/ditto_service.dart';
@@ -165,13 +166,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 12),
 
-            const Expanded(
-              child: Center(
-                child: Text(
-                  'Your PeerReal Memories will be added here later ✨',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white38, fontSize: 13),
-                ),
+            Expanded(
+              child: DqlBuilderService(
+                ditto: DittoService.instance.ditto,
+                query: '''
+                  SELECT * FROM reals
+                  WHERE author = :me
+                  ORDER BY createdAt DESC
+                ''',
+                queryArgs: {'me': DittoService.instance.localPeerId},
+                builder: (context, result) {
+                  final docs = result.items
+                      .map((item) => Map<String, dynamic>.from(item.value))
+                      .toList();
+
+                  if (docs.isEmpty) {
+                    return const Center(
+                      child: Text(
+                        'Your PeerReal Memories will be added here later ✨',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.white38, fontSize: 13),
+                      ),
+                    );
+                  }
+
+                  return ListView.builder(
+                    padding: const EdgeInsets.only(top: 8, bottom: 24),
+                    itemCount: docs.length,
+                    itemBuilder: (context, index) {
+                      final doc = docs[index];
+                      return PeerRealPostCard(
+                        key: ValueKey(doc['_id'] ?? doc['createdAt']),
+                        doc: doc,
+                      );
+                    },
+                  );
+                },
               ),
             ),
           ],
