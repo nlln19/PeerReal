@@ -133,8 +133,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
             return FutureBuilder<String>(
               future: DittoService.instance.getDisplayNameForPeer(otherId),
               builder: (context, snap) {
-                final displayName =
-                    snap.data ?? otherId;
+                final displayName = snap.data ?? otherId;
 
                 return ListTile(
                   leading: const CircleAvatar(
@@ -305,18 +304,14 @@ class _FriendsScreenState extends State<FriendsScreen> {
       ditto: ditto,
       query: '''
       SELECT * FROM friendships
+      WHERE toPeerId = :me AND status = 'pending'
       ORDER BY createdAt DESC
     ''',
+      queryArgs: {'me': me},
       builder: (context, result) {
         var requests = result.items
             .map((item) => Map<String, dynamic>.from(item.value))
             .toList();
-
-        requests = requests.where((req) {
-          final to = req['toPeerId'];
-          final status = req['status'] as String?;
-          return to == me && status == 'pending';
-        }).toList();
 
         if (requests.isEmpty) {
           return const Center(
@@ -333,8 +328,8 @@ class _FriendsScreenState extends State<FriendsScreen> {
               const Divider(color: Colors.white10, height: 1),
           itemBuilder: (context, index) {
             final req = requests[index];
-            final friendshipId = req['_id'];
-            final fromPeerId = req['fromPeerId'];
+            final fromPeerId = req['fromPeerId'] as String? ?? 'Unknown';
+            final friendshipId = req['_id'] as String?;
 
             return FutureBuilder<String>(
               future: DittoService.instance.getDisplayNameForPeer(fromPeerId),
@@ -354,21 +349,52 @@ class _FriendsScreenState extends State<FriendsScreen> {
                     'sent you a friend request',
                     style: TextStyle(color: Colors.white38, fontSize: 12),
                   ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.check, color: Colors.greenAccent),
-                    onPressed: () async {
-                      logger.i(
-                        'Accepting friend request from $fromPeerId (friendshipId: $friendshipId)',
-                      );
-                      await DittoService.instance.acceptFriendRequest(
-                        friendshipId,
-                      );
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Friends with $name')),
-                        );
-                      }
-                    },
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Decline
+                      IconButton(
+                        icon: const Icon(Icons.close, color: Colors.redAccent),
+                        onPressed: friendshipId == null
+                            ? null
+                            : () async {
+                                await DittoService.instance
+                                    .declineFriendRequest(friendshipId);
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'Declined request from $name',
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
+                      ),
+                      // Accept
+                      IconButton(
+                        icon: const Icon(
+                          Icons.check,
+                          color: Colors.greenAccent,
+                        ),
+                        onPressed: friendshipId == null
+                            ? null
+                            : () async {
+                                await DittoService.instance.acceptFriendRequest(
+                                  friendshipId,
+                                );
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'You are now friends with $name',
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
+                      ),
+                    ],
                   ),
                 );
               },

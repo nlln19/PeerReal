@@ -431,7 +431,7 @@ class DittoService {
           "doc": {
             "fromPeerId": localPeerId,
             "toPeerId": toPeerId,
-            "status": "pending",
+            "status": 'pending',
             "createdAt": now,
             "updatedAt": now,
           },
@@ -452,6 +452,24 @@ class DittoService {
       '''
       UPDATE friendships
       SET status = 'accepted',
+          updatedAt = :now
+      WHERE _id = :id
+      ''',
+      arguments: {
+        "id": friendshipId,
+        "now": DateTime.now().millisecondsSinceEpoch,
+      },
+    );
+  }
+
+  Future<void> declineFriendRequest(friendshipId) async {
+    final d = _ditto;
+    if (d == null) return;
+
+    await d.store.execute(
+      '''
+      UPDATE friendships
+      SET status = 'declined',
           updatedAt = :now
       WHERE _id = :id
       ''',
