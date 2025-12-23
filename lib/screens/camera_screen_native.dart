@@ -212,8 +212,9 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
                               .clamp(_minZoomLevel, _maxZoomLevel);
 
                           // kleine Änderungen ignorieren
-                          if ((newZoom - _currentZoomLevel).abs() < 0.01)
+                          if ((newZoom - _currentZoomLevel).abs() < 0.01) {
                             return;
+                          }
 
                           _currentZoomLevel = newZoom;
                           try {
