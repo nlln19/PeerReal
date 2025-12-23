@@ -172,11 +172,11 @@ class _FriendsScreenState extends State<FriendsScreen> {
             .map((item) => Map<String, dynamic>.from(item.value))
             .toList();
 
-        profiles.removeWhere((p) => p['peerId'] == me);
+        profiles.removeWhere((p) => p['peerId'] == me || p['_id'] == me);
 
         if (_searchTerm.isNotEmpty) {
           profiles = profiles.where((p) {
-            final name = (p['displayName'] ?? '').toLowerCase();
+            final name = (p['displayName'] as String? ?? '').toLowerCase();
             return name.contains(_searchTerm);
           }).toList();
         }
@@ -196,33 +196,83 @@ class _FriendsScreenState extends State<FriendsScreen> {
               const Divider(color: Colors.white10, height: 1),
           itemBuilder: (context, index) {
             final p = profiles[index];
-            final peerId = p['peerId'];
-            final name = p['displayName'] ?? peerId;
 
-            return ListTile(
-              leading: const CircleAvatar(
-                backgroundColor: Colors.white12,
-                child: Icon(Icons.person_add, color: Colors.white70),
-              ),
-              title: Text(name, style: const TextStyle(color: Colors.white)),
-              subtitle: Text(
-                peerId,
-                style: const TextStyle(color: Colors.white24, fontSize: 11),
-              ),
-              trailing: IconButton(
-                icon: const Icon(
-                  Icons.person_add_alt_1,
-                  color: Colors.greenAccent,
-                ),
-                onPressed: () async {
-                  await DittoService.instance.sendFriendRequest(peerId);
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Friend request sent to $name')),
-                    );
-                  }
-                },
-              ),
+            final peerId =
+                (p['peerId'] as String?) ?? (p['_id'] as String?) ?? '';
+            final name = p['displayName'] as String? ?? peerId;
+
+            return FutureBuilder<String>(
+              future: DittoService.instance.getFriendshipStatusWith(peerId),
+              builder: (context, snap) {
+                final status = snap.data;
+
+                Widget trailing;
+                VoidCallback? onPressed;
+
+                if (status == null) {
+                  trailing = const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation(Colors.white54),
+                    ),
+                  );
+                } else if (status == 'accepted') {
+                  trailing = const Text(
+                    'Friends',
+                    style: TextStyle(
+                      color: Colors.white38,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  );
+                } else if (status == 'pending') {
+                  trailing = const Text(
+                    'Requested',
+                    style: TextStyle(
+                      color: Colors.white38,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  );
+                } else {
+                  trailing = const Icon(
+                    Icons.person_add_alt_1,
+                    color: Colors.greenAccent,
+                  );
+                  onPressed = () async {
+                    await DittoService.instance.sendFriendRequest(peerId);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Friend request sent to $name')),
+                      );
+                    }
+                    setState(() {});
+                  };
+                }
+
+                return ListTile(
+                  leading: const CircleAvatar(
+                    backgroundColor: Colors.white12,
+                    child: Icon(Icons.person, color: Colors.white70),
+                  ),
+                  title: Text(
+                    name,
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  subtitle: Text(
+                    peerId,
+                    style: const TextStyle(color: Colors.white24, fontSize: 11),
+                  ),
+                  trailing: IconButton(
+                    icon: trailing is Icon
+                        ? trailing
+                        : const Icon(Icons.person),
+                    onPressed: onPressed,
+                  ),
+                );
+              },
             );
           },
         );

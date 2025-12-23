@@ -462,6 +462,35 @@ class DittoService {
     );
   }
 
+  Future<String> getFriendshipStatusWith(String otherPeerId) async {
+    final d = _ditto;
+    if (d == null) return 'none';
+
+    try {
+      final res = await d.store.execute(
+        '''
+      SELECT * FROM friendships
+      WHERE (fromPeerId = :me AND toPeerId = :other)
+         OR (fromPeerId = :other AND toPeerId = :me)
+      ORDER BY createdAt DESC
+      LIMIT 1
+      ''',
+        arguments: {'me': localPeerId, 'other': otherPeerId},
+      );
+
+      if (res.items.isEmpty) {
+        return 'none';
+      }
+
+      final value = res.items.first.value;
+      final status = value['status'] as String? ?? 'pending';
+      return status;
+    } catch (e) {
+      logger.e('❌ Error in getFriendshipStatusWith: $e');
+      return 'none';
+    }
+  }
+
   void dispose() {
     _ditto?.stopSync();
     _ditto?.close();
