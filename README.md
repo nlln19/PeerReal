@@ -1,16 +1,7 @@
 # PeerReal
 
 PeerReal is a simple BeReal-like prototype developed as a seminar project.  
-The app allows users to take two pictures with their webcam (moment + selfie) and display them in a shared feed that is synchronized via Ditto P2P.
-
-## Features
-
-## Tech
-
-- **Flutter**
-- **Dart**
-- **camera** Package
-- **Ditto Live** (P2P Sync)
+The app allows users to take two pictures and display them in a shared feed that is synchronized via Ditto.
 
 ## Installation & Setup
 
