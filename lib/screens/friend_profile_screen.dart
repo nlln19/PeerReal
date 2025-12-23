@@ -1,3 +1,5 @@
+import 'package:PeerReal/services/dql_builder_service.dart';
+import 'package:PeerReal/widgets/peer_real_post_card.dart';
 import 'package:flutter/material.dart';
 import '../services/ditto_service.dart';
 
@@ -121,12 +123,41 @@ class _FriendProfileScreenState extends State<FriendProfileScreen> {
             const SizedBox(height: 12),
 
             Expanded(
-              child: Center(
-                child: Text(
-                  'Friend moments feed kommt später ✨',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.white38, fontSize: 13),
-                ),
+              child: DqlBuilderService(
+                ditto: DittoService.instance.ditto,
+                query: '''
+                  SELECT * FROM reals
+                  WHERE author = :peerId
+                  ORDER BY createdAt DESC
+                ''',
+                queryArgs: {'peerId': widget.peerId},
+                builder: (context, result) {
+                  final docs = result.items
+                      .map((item) => Map<String, dynamic>.from(item.value))
+                      .toList();
+
+                  if (docs.isEmpty) {
+                    return Center(
+                      child: Text(
+                        "$name has no PeerReal moments yet😔",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.white38, fontSize: 13),
+                      ),
+                    );
+                  }
+
+                  return ListView.builder(
+                    padding: const EdgeInsets.only(top: 8, bottom: 24),
+                    itemCount: docs.length,
+                    itemBuilder: (context, index) {
+                      final doc = docs[index];
+                      return PeerRealPostCard(
+                        key: ValueKey(doc['_id'] ?? doc['createdAt']),
+                        doc: doc,
+                      );
+                    },
+                  );
+                },
               ),
             ),
           ],
