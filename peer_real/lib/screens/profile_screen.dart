@@ -1,3 +1,5 @@
+import 'package:PeerReal/services/dql_builder_service.dart';
+import 'package:ditto_live/ditto_live.dart';
 import 'package:flutter/material.dart';
 import 'package:PeerReal/services/ditto_service.dart';
 import '../services/logger_service.dart';
@@ -150,20 +152,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               icon: const Icon(Icons.edit, size: 18),
-              label: const Text('Change display name'),
+              label: const Text('Change nickname'),
             ),
 
             const SizedBox(height: 24),
 
-            // Memories / Posts / Friends
-            const Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _ProfileStat(label: 'Moments', value: '12'),
-                _ProfileStat(label: 'Friends', value: '8'),
-                _ProfileStat(label: 'Streak', value: '3'),
-              ],
-            ),
+            _ProfileStatsRow(),
 
             const SizedBox(height: 24),
 
@@ -192,6 +186,60 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _ProfileStatsRow extends StatelessWidget {
+  final Ditto ditto = DittoService.instance.ditto;
+
+  @override
+  Widget build(BuildContext context) {
+    final me = DittoService.instance.localPeerId;
+
+    return DqlBuilderService(
+      ditto: ditto,
+      query: '''
+        SELECT * FROM reals
+        WHERE author = :me
+      ''',
+      queryArgs: {'me': me},
+      builder: (context, filesResult) {
+        final momentsCount = filesResult.items.length;
+
+        return DqlBuilderService(
+          ditto: ditto,
+          query: '''
+            SELECT * FROM friendships
+            WHERE status = 'accepted'
+              AND (fromPeerId = :me OR toPeerId = :me)
+          ''',
+          queryArgs: {'me': me},
+          builder: (context, friendsResult) {
+            final friendsCount = friendsResult.items.length;
+
+            final streakCount = 0; //TODO:
+
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _ProfileStat(
+                  label: 'Moments',
+                  value: momentsCount.toString(),
+                ),
+                _ProfileStat(
+                  label: 'Friends',
+                  value: friendsCount.toString(),
+                ),
+                _ProfileStat(
+                  label: 'Streak',
+                  value: streakCount.toString(),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }

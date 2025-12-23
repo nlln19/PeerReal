@@ -225,6 +225,10 @@ class DittoService {
     }
   }
 
+  Future<String> getValueOfMoments(String peerId) async {
+    return '0';
+  }
+
   // ---------- POSTS / IMAGES ----------
 
   Future<void> addImageFromBytes(
