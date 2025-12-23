@@ -1,6 +1,6 @@
 import 'package:ditto_live/ditto_live.dart';
 import 'package:flutter/material.dart';
-//Aus Quickstart Demo Kopiert. 
+//Aus Quickstart Demo Kopiert.
 
 class DqlBuilderService extends StatefulWidget {
   final Ditto ditto;
@@ -57,7 +57,8 @@ class _DqlBuilderServiceState extends State<DqlBuilderService> {
   void didUpdateWidget(covariant DqlBuilderService oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    final isSame = widget.query == oldWidget.query &&
+    final isSame =
+        widget.query == oldWidget.query &&
         widget.queryArgs == oldWidget.queryArgs;
 
     if (!isSame) {
@@ -99,12 +100,13 @@ class _DqlBuilderServiceState extends State<DqlBuilderService> {
     if (stream == null) return placeholder;
 
     return StreamBuilder(
-        stream: stream,
-        builder: (context, snapshot) {
-          final response = snapshot.data;
-          if (response == null) return widget.loading ?? _defaultLoading;
-          return widget.builder(context, response);
-        });
+      stream: stream,
+      builder: (context, snapshot) {
+        final response = snapshot.data;
+        if (response == null) return widget.loading ?? _defaultLoading;
+        return widget.builder(context, response);
+      },
+    );
   }
 }
 

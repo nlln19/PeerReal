@@ -20,9 +20,7 @@ class PeerReal extends StatelessWidget {
             fontSize: 72,
             fontWeight: FontWeight.bold,
           ),
-          titleLarge: GoogleFonts.inter(
-            fontSize: 30,
-          ),
+          titleLarge: GoogleFonts.inter(fontSize: 30),
           bodyMedium: GoogleFonts.inter(),
           bodySmall: GoogleFonts.inter(),
         ),

@@ -22,8 +22,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadDisplayName() async {
     final service = DittoService.instance;
-    final name =
-        await service.getDisplayNameForPeer(service.localPeerId);
+    final name = await service.getDisplayNameForPeer(service.localPeerId);
     if (!mounted) return;
     setState(() {
       _displayName = name;
@@ -39,8 +38,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           title: const Text('Choose your name'),
           content: TextField(
             controller: controller,
-            decoration:
-                const InputDecoration(hintText: 'Enter a unique name'),
+            decoration: const InputDecoration(hintText: 'Enter a unique name'),
           ),
           actions: [
             TextButton(
@@ -48,8 +46,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: const Text('Cancel'),
             ),
             TextButton(
-              onPressed: () =>
-                  Navigator.pop(context, controller.text.trim()),
+              onPressed: () => Navigator.pop(context, controller.text.trim()),
               child: const Text('Save'),
             ),
           ],
@@ -71,9 +68,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(ok
-            ? 'Name set to "$name"'
-            : 'Name "$name" is already taken'),
+        content: Text(
+          ok ? 'Name set to "$name"' : 'Name "$name" is already taken',
+        ),
       ),
     );
   }
@@ -81,8 +78,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final name = _displayName;
-    final handle =
-        name != null && name.isNotEmpty ? '@$name' : '@username';
+    final handle = name != null && name.isNotEmpty ? '@$name' : '@username';
 
     return Scaffold(
       backgroundColor: const Color(0xFF05050A),
@@ -100,8 +96,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ],
       ),
       body: Padding(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -111,8 +106,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const CircleAvatar(
                   radius: 32,
                   backgroundColor: Colors.white12,
-                  child:
-                      Icon(Icons.person, size: 32, color: Colors.white70),
+                  child: Icon(Icons.person, size: 32, color: Colors.white70),
                 ),
                 const SizedBox(width: 16),
                 Column(
@@ -176,10 +170,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Text(
                   'Your PeerReal Memories will be added here later ✨',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white38,
-                    fontSize: 13,
-                  ),
+                  style: TextStyle(color: Colors.white38, fontSize: 13),
                 ),
               ),
             ),
@@ -223,18 +214,9 @@ class _ProfileStatsRow extends StatelessWidget {
             return Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _ProfileStat(
-                  label: 'Moments',
-                  value: momentsCount.toString(),
-                ),
-                _ProfileStat(
-                  label: 'Friends',
-                  value: friendsCount.toString(),
-                ),
-                _ProfileStat(
-                  label: 'Streak',
-                  value: streakCount.toString(),
-                ),
+                _ProfileStat(label: 'Moments', value: momentsCount.toString()),
+                _ProfileStat(label: 'Friends', value: friendsCount.toString()),
+                _ProfileStat(label: 'Streak', value: streakCount.toString()),
               ],
             );
           },
@@ -248,10 +230,7 @@ class _ProfileStat extends StatelessWidget {
   final String label;
   final String value;
 
-  const _ProfileStat({
-    required this.label,
-    required this.value,
-  });
+  const _ProfileStat({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -268,10 +247,7 @@ class _ProfileStat extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           label,
-          style: const TextStyle(
-            color: Colors.white54,
-            fontSize: 12,
-          ),
+          style: const TextStyle(color: Colors.white54, fontSize: 12),
         ),
       ],
     );

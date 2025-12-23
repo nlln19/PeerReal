@@ -162,7 +162,6 @@ class _FriendsScreenState extends State<FriendsScreen> {
     );
   }
 
-  /// Suchergebnisse über alle Profile (Name-Suche, um Anfragen zu schicken)
   Widget _buildProfileSearchResults(Ditto ditto, String me) {
     return DqlBuilderService(
       ditto: ditto,
@@ -175,10 +174,8 @@ class _FriendsScreenState extends State<FriendsScreen> {
             .map((item) => Map<String, dynamic>.from(item.value))
             .toList();
 
-        // eigenen Eintrag rausfiltern (über peerId)
         profiles.removeWhere((p) => p['peerId'] == me);
 
-        // nach displayName filtern
         if (_searchTerm.isNotEmpty) {
           profiles = profiles.where((p) {
             final name = (p['displayName'] ?? '').toLowerCase();
@@ -292,18 +289,18 @@ class _FriendsScreenState extends State<FriendsScreen> {
                   trailing: IconButton(
                     icon: const Icon(Icons.check, color: Colors.greenAccent),
                     onPressed: () async {
-                            logger.i(
-                              'Accepting friend request from $fromPeerId (friendshipId: $friendshipId)',
-                            );
-                            await DittoService.instance.acceptFriendRequest(
-                              friendshipId,
-                            );
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Friends with $name')),
-                            );
-                          }
-                          },
+                      logger.i(
+                        'Accepting friend request from $fromPeerId (friendshipId: $friendshipId)',
+                      );
+                      await DittoService.instance.acceptFriendRequest(
+                        friendshipId,
+                      );
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Friends with $name')),
+                        );
+                      }
+                    },
                   ),
                 );
               },

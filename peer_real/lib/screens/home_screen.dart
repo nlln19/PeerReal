@@ -54,10 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
         result['selfie'] is Uint8List) {
       final mainBytes = result['main'] as Uint8List;
       final selfieBytes = result['selfie'] as Uint8List;
-      await DittoService.instance.addDualImageFromBytes(
-        mainBytes,
-        selfieBytes,
-      );
+      await DittoService.instance.addDualImageFromBytes(mainBytes, selfieBytes);
     }
     // Fallback: altes Single-Bild
     else if (result is Uint8List) {
@@ -72,9 +69,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_ditto == null) {
       return Scaffold(
         body: Center(
-          child: CircularProgressIndicator(
-            color: theme.colorScheme.primary,
-          ),
+          child: CircularProgressIndicator(color: theme.colorScheme.primary),
         ),
       );
     }
@@ -89,10 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
         centerTitle: true,
         title: const Text(
           'PeerReal.',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.5,
-          ),
+          style: TextStyle(fontWeight: FontWeight.w700, letterSpacing: 0.5),
         ),
         actions: [
           IconButton(
@@ -171,17 +163,11 @@ class _HomeScreenState extends State<HomeScreen> {
               children: const {
                 0: Padding(
                   padding: EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-                  child: Text(
-                    'All',
-                    style: TextStyle(fontSize: 13),
-                  ),
+                  child: Text('All', style: TextStyle(fontSize: 13)),
                 ),
                 1: Padding(
                   padding: EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-                  child: Text(
-                    'Friends',
-                    style: TextStyle(fontSize: 13),
-                  ),
+                  child: Text('Friends', style: TextStyle(fontSize: 13)),
                 ),
               },
               onValueChanged: (value) {
@@ -225,8 +211,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ''',
                   builder: (context, realsResult) {
                     var reals = realsResult.items
-                        .map((item) =>
-                            Map<String, dynamic>.from(item.value))
+                        .map((item) => Map<String, dynamic>.from(item.value))
                         .toList();
 
                     if (_feedFilter == 1) {
@@ -244,8 +229,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.camera_alt_outlined,
-                                  size: 72, color: Colors.white24),
+                              Icon(
+                                Icons.camera_alt_outlined,
+                                size: 72,
+                                color: Colors.white24,
+                              ),
                               SizedBox(height: 16),
                               Text(
                                 'Share your first PeerReal Moment',

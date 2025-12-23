@@ -56,8 +56,7 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
       logger.e('❌ Fehler bei Kamera-Setup: $e');
       if (!mounted) return;
       setState(() {
-        _errorMessage =
-            'Kamera konnte nicht gestartet werden.\nFehler: $e';
+        _errorMessage = 'Kamera konnte nicht gestartet werden.\nFehler: $e';
         _initializing = false;
       });
     }
@@ -167,12 +166,9 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
       backgroundColor: const Color(0xFF05050A),
       appBar: AppBar(
         backgroundColor: const Color(0xFF05050A),
-        title: 
-        Text(isStep1 ? 'Capture the moment' : 'Take a selfie',
-            style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          )
+        title: Text(
+          isStep1 ? 'Capture the moment' : 'Take a selfie',
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
         ),
       ),
       // schützt vor Notch/Systemleisten
@@ -200,7 +196,8 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
                       final screenHeight = constraints.maxHeight;
 
                       final screenRatio = screenWidth / screenHeight;
-                      final previewRatio = previewSize.height / previewSize.width;
+                      final previewRatio =
+                          previewSize.height / previewSize.width;
                       final scale = previewRatio / screenRatio;
 
                       return GestureDetector(
@@ -215,7 +212,8 @@ class _NativeCameraScreenState extends State<NativeCameraScreen> {
                               .clamp(_minZoomLevel, _maxZoomLevel);
 
                           // kleine Änderungen ignorieren
-                          if ((newZoom - _currentZoomLevel).abs() < 0.01) return;
+                          if ((newZoom - _currentZoomLevel).abs() < 0.01)
+                            return;
 
                           _currentZoomLevel = newZoom;
                           try {
@@ -264,9 +262,6 @@ class CameraPreviewPlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: CircularProgressIndicator(),
-    );
+    return const Center(child: CircularProgressIndicator());
   }
 }
-

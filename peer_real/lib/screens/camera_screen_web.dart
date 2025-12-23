@@ -51,8 +51,7 @@ class _WebCameraScreenState extends State<WebCameraScreen> {
       logger.e('❌ WebCameraScreen: Fehler bei Kamera-Setup: $e');
       if (!mounted) return;
       setState(() {
-        _errorMessage =
-            'Kamera konnte nicht gestartet werden.\nFehler: $e';
+        _errorMessage = 'Kamera konnte nicht gestartet werden.\nFehler: $e';
         _initializing = false;
       });
     }
@@ -115,7 +114,9 @@ class _WebCameraScreenState extends State<WebCameraScreen> {
 
       final XFile file = await controller.takePicture();
       final bytes = await file.readAsBytes();
-      logger.i('📸 WebCameraScreen: Step $_step captured ${bytes.length} bytes');
+      logger.i(
+        '📸 WebCameraScreen: Step $_step captured ${bytes.length} bytes',
+      );
 
       if (!mounted) return;
 
@@ -161,8 +162,7 @@ class _WebCameraScreenState extends State<WebCameraScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.videocam_off,
-                    color: Colors.white54, size: 48),
+                const Icon(Icons.videocam_off, color: Colors.white54, size: 48),
                 const SizedBox(height: 16),
                 Text(
                   _errorMessage!,
@@ -211,8 +211,9 @@ class _WebCameraScreenState extends State<WebCameraScreen> {
                 }
 
                 final size = controller.value.previewSize;
-                final aspectRatio =
-                    size != null ? size.width / size.height : 3 / 4;
+                final aspectRatio = size != null
+                    ? size.width / size.height
+                    : 3 / 4;
 
                 return Center(
                   child: AspectRatio(
