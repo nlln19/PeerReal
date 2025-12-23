@@ -491,6 +491,45 @@ class DittoService {
     }
   }
 
+  Future<int> countRealsForPeer(String peerId) async {
+    final d = _ditto;
+    if (d == null) return 0;
+
+    try {
+      final res = await d.store.execute(
+        '''
+        SELECT * FROM reals
+        WHERE author = :peerId
+        ''',
+        arguments: {'peerId': peerId},
+      );
+      return res.items.length;
+    } catch (e) {
+      logger.e('❌ Error in countRealsForPeer: $e');
+      return 0;
+    }
+  }
+
+  Future<int> countFriendsForPeer(String peerId) async {
+    final d = _ditto;
+    if (d == null) return 0;
+
+    try {
+      final res = await d.store.execute(
+        '''
+        SELECT * FROM friendships
+        WHERE status = 'accepted'
+          AND (fromPeerId = :peerId OR toPeerId = :peerId)
+        ''',
+        arguments: {'peerId': peerId},
+      );
+      return res.items.length;
+    } catch (e) {
+      logger.e('❌ Error in countFriendsForPeer: $e');
+      return 0;
+    }
+  }
+
   void dispose() {
     _ditto?.stopSync();
     _ditto?.close();

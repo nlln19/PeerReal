@@ -1,3 +1,4 @@
+import 'package:PeerReal/screens/friend_profile_screen.dart';
 import 'package:PeerReal/services/logger_service.dart';
 import 'package:flutter/material.dart';
 import 'package:ditto_live/ditto_live.dart';
@@ -133,7 +134,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
               future: DittoService.instance.getDisplayNameForPeer(otherId),
               builder: (context, snap) {
                 final displayName =
-                    snap.data ?? otherId; // Fallback: PeerId falls noch lädt
+                    snap.data ?? otherId;
 
                 return ListTile(
                   leading: const CircleAvatar(
@@ -149,7 +150,15 @@ class _FriendsScreenState extends State<FriendsScreen> {
                     style: TextStyle(color: Colors.white38, fontSize: 12),
                   ),
                   onTap: () {
-                    // Friend-Profile öffnen
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => FriendProfileScreen(
+                          peerId: otherId,
+                          initialDisplayName: displayName,
+                        ),
+                      ),
+                    );
                   },
                 );
               },
@@ -271,6 +280,17 @@ class _FriendsScreenState extends State<FriendsScreen> {
                         : const Icon(Icons.person),
                     onPressed: onPressed,
                   ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => FriendProfileScreen(
+                          peerId: peerId,
+                          initialDisplayName: name,
+                        ),
+                      ),
+                    );
+                  },
                 );
               },
             );
