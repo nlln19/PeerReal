@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:PeerReal/services/ditto_service.dart';
 import '../services/logger_service.dart';
+import '../screens/profile_screen.dart';
+import '../screens/friend_profile_screen.dart';
 
 class PeerRealPostCard extends StatefulWidget {
   final Map<String, dynamic> doc;
@@ -19,18 +21,40 @@ class PeerRealPostCard extends StatefulWidget {
 class _PeerRealPostCardState extends State<PeerRealPostCard> {
   Uint8List? _imageData;
   Uint8List? _selfieData;
+
+  late final String _authorId;
+  late final bool _isMe;
   String? _authorName;
 
   @override
   void initState() {
     super.initState();
-    _loadImage();
+    _authorId = widget.doc['author'] as String? ?? '';
+    _isMe = _authorId.isNotEmpty &&
+        _authorId == DittoService.instance.localPeerId;
+
     _loadAuthorName();
+    _loadImage();
+  }
+
+  Future<void> _loadAuthorName() async {
+    if (_authorId.isEmpty) return;
+    try {
+      final name =
+          await DittoService.instance.getDisplayNameForPeer(_authorId);
+      if (!mounted) return;
+      setState(() {
+        _authorName = name;
+      });
+    } catch (e) {
+      logger.e('❌ Error loading author name: $e');
+    }
   }
 
   Future<void> _loadImage() async {
     try {
-      final main = await DittoService.instance.getAttachmentData(widget.doc);
+      final main =
+          await DittoService.instance.getAttachmentData(widget.doc);
       final selfie =
           await DittoService.instance.getSelfieAttachmentData(widget.doc);
 
@@ -44,20 +68,26 @@ class _PeerRealPostCardState extends State<PeerRealPostCard> {
     }
   }
 
-  Future<void> _loadAuthorName() async {
-    try {
-      final authorId = widget.doc['author'] as String?;
-      if (authorId == null) return;
+  void _openProfile() {
+    if (_authorId.isEmpty) return;
 
-      final name =
-          await DittoService.instance.getDisplayNameForPeer(authorId);
-
-      if (!mounted) return;
-      setState(() {
-        _authorName = name;
-      });
-    } catch (e) {
-      logger.e('❌ Error loading author name: $e');
+    if (_isMe) {
+      // eigenes Profil
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const ProfileScreen()),
+      );
+    } else {
+      // Friend-Profile
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => FriendProfileScreen(
+            peerId: _authorId,
+            initialDisplayName: _authorName,
+          ),
+        ),
+      );
     }
   }
 
@@ -72,48 +102,49 @@ class _PeerRealPostCardState extends State<PeerRealPostCard> {
         ? "${createdAt.hour.toString().padLeft(2, '0')}:${createdAt.minute.toString().padLeft(2, '0')}"
         : "";
 
-    final authorId = widget.doc['author'] as String?;
-    final isMe = authorId == DittoService.instance.localPeerId;
-
-    // Was im Header angezeigt wird
-    final displayName = isMe ? 'You': (_authorName ?? 'Unknown User');
+    final displayName = _authorName ??
+        (_isMe ? 'You' : (_authorId.isNotEmpty
+            ? _authorId.substring(0, 8)
+            : 'Unknown'));
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Kopfzeile: „Name • 21:05“
-          Row(
-            children: [
-              const CircleAvatar(
-                radius: 16,
-                backgroundColor: Colors.white12,
-                child: Icon(Icons.person, size: 18, color: Colors.white70),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                displayName,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
+          InkWell(
+            borderRadius: BorderRadius.circular(24),
+            onTap: _openProfile,
+            child: Row(
+              children: [
+                const CircleAvatar(
+                  radius: 16,
+                  backgroundColor: Colors.white12,
+                  child: Icon(Icons.person, size: 18, color: Colors.white70),
                 ),
-              ),
-              if (timeLabel.isNotEmpty) ...[
-                const SizedBox(width: 6),
+                const SizedBox(width: 8),
                 Text(
-                  '• $timeLabel',
+                  displayName,
                   style: const TextStyle(
-                    color: Colors.white54,
-                    fontSize: 12,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
+                if (timeLabel.isNotEmpty) ...[
+                  const SizedBox(width: 6),
+                  Text(
+                    '• $timeLabel',
+                    style: const TextStyle(
+                      color: Colors.white54,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
           const SizedBox(height: 8),
 
-          // Bildkarte im BeReal-Style
           Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(
@@ -144,8 +175,10 @@ class _PeerRealPostCardState extends State<PeerRealPostCard> {
                                   logger.e(
                                       '❌ Main image decode error: $error');
                                   return const Center(
-                                    child: Icon(Icons.broken_image,
-                                        color: Colors.white70),
+                                    child: Icon(
+                                      Icons.broken_image,
+                                      color: Colors.white70,
+                                    ),
                                   );
                                 },
                               ),
@@ -175,9 +208,11 @@ class _PeerRealPostCardState extends State<PeerRealPostCard> {
                                               '❌ Selfie decode error: $error');
                                           return const ColoredBox(
                                             color: Colors.black54,
-                                            child: Icon(Icons.broken_image,
-                                                color: Colors.white70,
-                                                size: 20),
+                                            child: Icon(
+                                              Icons.broken_image,
+                                              color: Colors.white70,
+                                              size: 20,
+                                            ),
                                           );
                                         },
                                       ),
