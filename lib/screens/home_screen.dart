@@ -56,7 +56,6 @@ class _HomeScreenState extends State<HomeScreen> {
       final selfieBytes = result['selfie'] as Uint8List;
       await DittoService.instance.addDualImageFromBytes(mainBytes, selfieBytes);
     }
-    // Fallback: altes Single-Bild
     else if (result is Uint8List) {
       await DittoService.instance.addImageFromBytes(result);
     }

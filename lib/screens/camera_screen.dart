@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import 'camera_screen_native.dart';
+import 'camera_screen_mobile.dart';
 import 'camera_screen_web.dart';
 
 class CameraScreen extends StatelessWidget {
@@ -13,8 +13,8 @@ class CameraScreen extends StatelessWidget {
       // Web-Version (Browser)
       return const WebCameraScreen();
     } else {
-      // Native Version (Android, iOS, macOS, Windows)
-      return const NativeCameraScreen();
+      // Mobile Version (Android, iOS, macOS, Windows)
+      return const MobileCameraScreen();
     }
   }
 }

@@ -19,7 +19,6 @@ class _WebCameraScreenState extends State<WebCameraScreen> {
   bool _initializing = true;
   String? _errorMessage;
 
-  // BeReal-Flow
   int _step = 1; // 1 = Moment (Hauptbild), 2 = Selfie
   Uint8List? _mainImage;
 
@@ -45,7 +44,6 @@ class _WebCameraScreenState extends State<WebCameraScreen> {
         return;
       }
 
-      // Schritt 1: irgendeine Kamera (z.B. "back" / default)
       await _initForStep1();
     } catch (e) {
       logger.e('❌ WebCameraScreen: Fehler bei Kamera-Setup: $e');
@@ -68,7 +66,6 @@ class _WebCameraScreenState extends State<WebCameraScreen> {
   }
 
   Future<void> _initForStep2() async {
-    // Versuche Frontkamera zu finden, sonst gleiche wie Step 1
     CameraDescription camera;
     try {
       camera = _cameras.firstWhere(
@@ -121,16 +118,13 @@ class _WebCameraScreenState extends State<WebCameraScreen> {
       if (!mounted) return;
 
       if (_step == 1) {
-        // Hauptbild fertig → auf Selfie-Kamera wechseln
         setState(() {
           _mainImage = bytes;
           _initializing = true;
         });
         await _initForStep2();
       } else {
-        // Selfie fertig → beide Bilder zurückgeben
         if (_mainImage == null) {
-          // safety fallback: nur Selfie zweimal, falls irgendwas schiefging
           Navigator.pop(context, {'main': bytes, 'selfie': bytes});
         } else {
           Navigator.pop(context, {'main': _mainImage!, 'selfie': bytes});

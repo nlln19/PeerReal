@@ -12,7 +12,7 @@ class FriendsScreen extends StatefulWidget {
 }
 
 class _FriendsScreenState extends State<FriendsScreen> {
-  int _tabIndex = 0; // 0 = Freunde, 1 = Anfragen
+  int _tabIndex = 0; // 0 = Friends, 1 = Requests
   String _searchTerm = '';
 
   @override
@@ -31,7 +31,6 @@ class _FriendsScreenState extends State<FriendsScreen> {
         children: [
           const SizedBox(height: 8),
 
-          // Friends/Requests Tabs
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -51,7 +50,6 @@ class _FriendsScreenState extends State<FriendsScreen> {
 
           const SizedBox(height: 16),
 
-          // Suche
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: TextField(
@@ -151,7 +149,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                     style: TextStyle(color: Colors.white38, fontSize: 12),
                   ),
                   onTap: () {
-                    // später Friend-Profile öffnen
+                    // Friend-Profile öffnen
                   },
                 );
               },

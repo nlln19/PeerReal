@@ -139,7 +139,6 @@ class DittoService {
         arguments: {"name": trimmed},
       );
 
-      // Name ist frei, wenn keine Profile zurückkommen
       final available = res.items.isEmpty;
       logger.i('🔎 Name "$trimmed" available: $available');
       return available;
@@ -179,7 +178,6 @@ class DittoService {
       ''',
       arguments: {
         "doc": {
-          // eigene Zuordnung Peer ↔ Profil
           "peerId": localPeerId,
           "displayName": displayName,
           "createdAt": DateTime.now().millisecondsSinceEpoch,
@@ -189,7 +187,6 @@ class DittoService {
   }
 
   Future<String> getDisplayNameForPeer(String peerId) async {
-    // Cache-Check
     if (_profileNameCache.containsKey(peerId)) {
       return _profileNameCache[peerId]!;
     }
@@ -216,8 +213,6 @@ class DittoService {
           return name;
         }
       }
-
-      // Fallback: PeerId, falls es (noch) kein Profil gibt
       return peerId;
     } catch (e) {
       logger.e('❌ Error in getDisplayNameForPeer: $e');
@@ -405,7 +400,6 @@ class DittoService {
     if (d == null) return false;
 
     try {
-      // Keine Duplikate
       final existing = await d.store.execute(
         '''
         SELECT status, fromPeerId, toPeerId

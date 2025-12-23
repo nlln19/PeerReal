@@ -6,14 +6,14 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import '../services/logger_service.dart';
 
-class NativeCameraScreen extends StatefulWidget {
-  const NativeCameraScreen({super.key});
+class MobileCameraScreen extends StatefulWidget {
+  const MobileCameraScreen({super.key});
 
   @override
-  State<NativeCameraScreen> createState() => _NativeCameraScreenState();
+  State<MobileCameraScreen> createState() => _MobileCameraScreenState();
 }
 
-class _NativeCameraScreenState extends State<NativeCameraScreen> {
+class _MobileCameraScreenState extends State<MobileCameraScreen> {
   List<CameraDescription> _cameras = [];
   CameraController? _controller;
   Future<void>? _initializeControllerFuture;
