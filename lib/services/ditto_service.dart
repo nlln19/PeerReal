@@ -548,6 +548,58 @@ class DittoService {
     }
   }
 
+  // ---------- ACCOUNT LÖSCHEN ----------
+
+  Future<bool> deleteAccountAndData() async {
+    final d = _ditto;
+    if (d == null) return false;
+
+    try {
+      final id = localPeerId;
+
+      // 1) Reals dieses Users löschen
+      await d.store.execute(
+        '''
+      DELETE FROM COLLECTION reals
+      WHERE author = :id
+      ''',
+        arguments: {"id": id},
+      );
+
+      // 2) Friendships, in denen dieser User vorkommt, löschen
+      await d.store.execute(
+        '''
+      DELETE FROM COLLECTION friendships
+      WHERE fromPeerId = :id
+         OR toPeerId   = :id
+      ''',
+        arguments: {"id": id},
+      );
+
+      // 3) Profile-Eintrag löschen
+      await d.store.execute(
+        '''
+      DELETE FROM COLLECTION profiles
+      WHERE peerId = :id
+      ''',
+        arguments: {"id": id},
+      );
+
+      // 4) Lokale Peer-ID und Name zurücksetzen
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('localPeerId');
+
+      _displayName = null;
+      _profileNameCache.clear();
+
+      logger.i('🗑️ Account & data deleted for $id');
+      return true;
+    } catch (e) {
+      logger.e('❌ Error in deleteAccountAndData: $e');
+      return false;
+    }
+  }
+
   void dispose() {
     _ditto?.stopSync();
     _ditto?.close();
