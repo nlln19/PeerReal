@@ -1,3 +1,4 @@
+import 'package:PeerReal/screens/settings_screen.dart';
 import 'package:PeerReal/services/dql_builder_service.dart';
 import 'package:PeerReal/widgets/peer_real_post_card.dart';
 import 'package:ditto_live/ditto_live.dart';
@@ -91,7 +92,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           IconButton(
             icon: const Icon(Icons.settings_outlined),
             onPressed: () {
-              // später: Settings Screen
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              );
             },
           ),
         ],
