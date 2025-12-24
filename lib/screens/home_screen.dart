@@ -55,10 +55,16 @@ class _HomeScreenState extends State<HomeScreen> {
       final mainBytes = result['main'] as Uint8List;
       final selfieBytes = result['selfie'] as Uint8List;
       await DittoService.instance.addDualImageFromBytes(mainBytes, selfieBytes);
-    }
-    else if (result is Uint8List) {
+    } else if (result is Uint8List) {
       await DittoService.instance.addImageFromBytes(result);
     }
+  }
+
+  Color _segmentTextColor(int value) {
+    if (_feedFilter == value) {
+      return Colors.black;
+    }
+    return Colors.white;
   }
 
   @override
@@ -159,14 +165,26 @@ class _HomeScreenState extends State<HomeScreen> {
               backgroundColor: const Color(0xFF11111A),
               thumbColor: Colors.white,
               groupValue: _feedFilter,
-              children: const {
+              children: {
                 0: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-                  child: Text('All', style: TextStyle(fontSize: 13)),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 6,
+                    horizontal: 8,
+                  ),
+                  child: Text(
+                    'All',
+                    style: TextStyle(fontSize: 13, color: _segmentTextColor(0)),
+                  ),
                 ),
                 1: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-                  child: Text('Friends', style: TextStyle(fontSize: 13)),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 6,
+                    horizontal: 8,
+                  ),
+                  child: Text(
+                    'Friends',
+                    style: TextStyle(fontSize: 13, color: _segmentTextColor(1)),
+                  ),
                 ),
               },
               onValueChanged: (value) {

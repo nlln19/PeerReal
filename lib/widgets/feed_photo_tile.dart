@@ -7,10 +7,7 @@ import '../services/logger_service.dart';
 class FeedPhotoTile extends StatefulWidget {
   final Map<String, dynamic> doc;
 
-  const FeedPhotoTile({
-    super.key,
-    required this.doc,
-  });
+  const FeedPhotoTile({super.key, required this.doc});
 
   @override
   State<FeedPhotoTile> createState() => _FeedPhotoTileState();
@@ -28,11 +25,13 @@ class _FeedPhotoTileState extends State<FeedPhotoTile> {
 
   Future<void> _loadImage() async {
     logger.i('🔄 Loading image for: ${widget.doc['name']}');
-    
+
     try {
-      final imageData = await DittoService.instance.getAttachmentData(widget.doc);
+      final imageData = await DittoService.instance.getAttachmentData(
+        widget.doc,
+      );
       logger.i('📊 Image data result: ${imageData?.length} bytes');
-      
+
       if (mounted) {
         setState(() {
           _imageData = imageData;
@@ -45,8 +44,10 @@ class _FeedPhotoTileState extends State<FeedPhotoTile> {
 
   @override
   Widget build(BuildContext context) {
-    logger.i('🎨 Building ImageGridItem with data: ${_imageData?.length} bytes');
-    
+    logger.i(
+      '🎨 Building ImageGridItem with data: ${_imageData?.length} bytes',
+    );
+
     return Container(
       color: _imageData != null ? Colors.green : Colors.red,
       child: _imageData != null && _imageData!.isNotEmpty
