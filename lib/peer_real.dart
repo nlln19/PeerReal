@@ -26,8 +26,7 @@ class PeerReal extends StatelessWidget {
         ),
       ),
 
-      debugShowCheckedModeBanner:
-          false, // Debug-Banner ausblenden (bitte nid lösche😭)
+      debugShowCheckedModeBanner: false,
       home: const HomeScreen(),
     );
   }

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:PeerReal/services/ditto_service.dart';
 
 enum AppThemeMode { dark, light }
@@ -13,21 +12,11 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   String? _currentName;
-  bool _notificationsEnabled = true;
 
   @override
   void initState() {
     super.initState();
     _currentName = DittoService.instance.displayName;
-    _loadPrefs();
-  }
-
-  Future<void> _loadPrefs() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    setState(() {
-      _notificationsEnabled = prefs.getBool('notificationsEnabled') ?? true;
-    });
   }
 
   Future<void> _changeDisplayName() async {
@@ -75,24 +64,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Future<void> _toggleNotifications(bool value) async {
-    setState(() {
-      _notificationsEnabled = value;
-    });
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('notificationsEnabled', value);
-
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          value ? 'Notifications enabled' : 'Notifications disabled',
-        ),
-      ),
-    );
-  }
-
   Future<void> _confirmDeleteAccount() async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -132,7 +103,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
 
     if (ok) {
-      Navigator.of(context).pop(); // Settings schließen
+      Navigator.of(context).pop(); // Close Settings
     }
   }
 
@@ -164,26 +135,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             trailing: const Icon(Icons.edit, color: Colors.white70),
             onTap: _changeDisplayName,
-          ),
-          const Divider(color: Colors.white12),
-
-          // Notifications toggle
-          SwitchListTile.adaptive(
-            value: _notificationsEnabled,
-            onChanged: _toggleNotifications,
-            secondary: const Icon(
-              Icons.notifications_none,
-              color: Colors.white,
-            ),
-            title: const Text(
-              'Notifications',
-              style: TextStyle(color: Colors.white),
-            ),
-            subtitle: Text(
-              _notificationsEnabled ? 'Enabled' : 'Disabled',
-              style: const TextStyle(color: Colors.white54),
-            ),
-            activeColor: Colors.white,
           ),
           const Divider(color: Colors.white12),
 

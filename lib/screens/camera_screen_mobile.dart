@@ -21,7 +21,7 @@ class _MobileCameraScreenState extends State<MobileCameraScreen> {
   bool _initializing = true;
   String? _errorMessage;
 
-  int _step = 1; // 1 = Hauptbild, 2 = Selfie
+  int _step = 1; // 1 = Main, 2 = Selfie
   Uint8List? _mainImage;
 
   double _minZoomLevel = 1.0;
@@ -96,7 +96,7 @@ class _MobileCameraScreenState extends State<MobileCameraScreen> {
 
     final controller = CameraController(
       camera,
-      ResolutionPreset.medium, // medium = 720p, zum data spare
+      ResolutionPreset.medium, // medium = 720p
       enableAudio: false,
     );
 
@@ -108,7 +108,7 @@ class _MobileCameraScreenState extends State<MobileCameraScreen> {
 
     await initializeFuture;
 
-    // Zoom-Infos
+    // Zoom
     try {
       _minZoomLevel = await controller.getMinZoomLevel();
       _maxZoomLevel = await controller.getMaxZoomLevel();
@@ -120,7 +120,6 @@ class _MobileCameraScreenState extends State<MobileCameraScreen> {
     }
   }
 
-  // Bild aufnehmen
   Future<void> _onCapturePressed() async {
     final controller = _controller;
     if (controller == null) return;
@@ -171,11 +170,11 @@ class _MobileCameraScreenState extends State<MobileCameraScreen> {
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
         ),
       ),
-      // schützt vor Notch/Systemleisten
+      // safes from Notch
       body: SafeArea(
         child: Column(
           children: [
-            // Kamera-Preview
+            // Camera-Preview
             Expanded(
               child: FutureBuilder(
                 future: _initializeControllerFuture,
@@ -205,13 +204,13 @@ class _MobileCameraScreenState extends State<MobileCameraScreen> {
                           _baseZoomLevel = _currentZoomLevel;
                         },
                         onScaleUpdate: (details) async {
-                          // nur bei zwei Fingern zoomen
+                          // only zoom with two fingers
                           if (details.pointerCount < 2) return;
 
                           final newZoom = (_baseZoomLevel * details.scale)
                               .clamp(_minZoomLevel, _maxZoomLevel);
 
-                          // kleine Änderungen ignorieren
+                          // ignore small zoom changes
                           if ((newZoom - _currentZoomLevel).abs() < 0.01) {
                             return;
                           }

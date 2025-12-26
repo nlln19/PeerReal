@@ -1,6 +1,6 @@
+//Copied from Quickstart Demo
 import 'package:ditto_live/ditto_live.dart';
 import 'package:flutter/material.dart';
-//Aus Quickstart Demo Kopiert.
 
 class DqlBuilderService extends StatefulWidget {
   final Ditto ditto;

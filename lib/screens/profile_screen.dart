@@ -140,7 +140,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             const SizedBox(height: 16),
 
-            // Button zum Namen ändern
+            // Change Nickname Button
             OutlinedButton.icon(
               onPressed: () => _pickDisplayName(context),
               style: OutlinedButton.styleFrom(

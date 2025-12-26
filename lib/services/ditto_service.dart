@@ -26,8 +26,8 @@ class DittoService {
   String? _displayName;
   String? get displayName => _displayName;
 
-  // peerId -> displayName(Nickname)
-  final Map<String, String> _profileNameCache = {};
+  final Map<String, String> _profileNameCache =
+      {}; // peerId -> displayName(Nickname)
 
   Future<Ditto> init() async {
     if (_ditto != null) return _ditto!;
@@ -51,10 +51,10 @@ class DittoService {
     logger.i('✅ Ditto opened with appId=$appId');
 
     ditto.updateTransportConfig((config) {
-      // Cloud-Verbindung für alle Plattformen
+      // Cloud-WebSocket
       config.connect.webSocketUrls.add(websocketUrl);
 
-      // P2P nur auf Mobile
+      // P2P on Mobile
       if (!kIsWeb) {
         config.setAllPeerToPeerEnabled(true);
       }
@@ -105,7 +105,7 @@ class DittoService {
     }
   }
 
-  // ---------- PROFILE / USERNAME-LOGIK ----------
+  // ---------- PROFILE / USERNAME-LOGIC ----------
 
   Future<void> _initLocalPeerId() async {
     final prefs = await SharedPreferences.getInstance();
@@ -393,7 +393,7 @@ class DittoService {
     return _loadAttachmentFromToken(doc['selfieAttachment']);
   }
 
-  // ---------- FREUNDSCHAFTEN ----------
+  // ---------- FRIENDSHIPS ----------
 
   Future<bool> sendFriendRequest(String toPeerId) async {
     final d = _ditto;
@@ -548,7 +548,7 @@ class DittoService {
     }
   }
 
-  // ---------- ACCOUNT LÖSCHEN ----------
+  // ---------- DELETE ACCOUNT ----------
 
   Future<bool> deleteAccountAndData() async {
     final d = _ditto;
@@ -557,7 +557,6 @@ class DittoService {
     try {
       final id = localPeerId;
 
-      // 1) Reals dieses Users löschen
       await d.store.execute(
         '''
       DELETE FROM COLLECTION reals
@@ -566,7 +565,6 @@ class DittoService {
         arguments: {"id": id},
       );
 
-      // 2) Friendships, in denen dieser User vorkommt, löschen
       await d.store.execute(
         '''
       DELETE FROM COLLECTION friendships
@@ -576,7 +574,6 @@ class DittoService {
         arguments: {"id": id},
       );
 
-      // 3) Profile-Eintrag löschen
       await d.store.execute(
         '''
       DELETE FROM COLLECTION profiles
@@ -585,7 +582,6 @@ class DittoService {
         arguments: {"id": id},
       );
 
-      // 4) Lokale Peer-ID und Name zurücksetzen
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('localPeerId');
 

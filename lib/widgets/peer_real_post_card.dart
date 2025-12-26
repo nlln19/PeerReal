@@ -9,7 +9,7 @@ import '../services/logger_service.dart';
 class PeerRealPostCard extends StatefulWidget {
   final Map<String, dynamic> doc;
 
-  final bool showAuthorHeader; // Im Feed = true, Profil / FriendProfile = false
+  final bool showAuthorHeader; // Feed = true, Profil / FriendProfile = false
 
   const PeerRealPostCard({
     super.key,
@@ -74,13 +74,13 @@ class _PeerRealPostCardState extends State<PeerRealPostCard> {
     if (_authorId.isEmpty) return;
 
     if (_isMe) {
-      // eigenes Profil
+      // own Profil
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const ProfileScreen()),
       );
     } else {
-      // Friend-Profile
+      // Friends-Profile
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -169,7 +169,7 @@ class _PeerRealPostCardState extends State<PeerRealPostCard> {
                         : Stack(
                             fit: StackFit.expand,
                             children: [
-                              // Hauptbild
+                              // main image
                               Image.memory(
                                 _imageData!,
                                 fit: BoxFit.cover,
@@ -184,7 +184,7 @@ class _PeerRealPostCardState extends State<PeerRealPostCard> {
                                 },
                               ),
 
-                              // Selfie oben rechts
+                              // Selfie top right
                               if (_selfieData != null)
                                 Positioned(
                                   right: 12,

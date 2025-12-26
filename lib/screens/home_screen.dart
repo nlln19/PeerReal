@@ -104,7 +104,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
 
-      // Kamera-Button unten
+      // Camera-Button
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.white,
@@ -307,7 +307,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// Widget für Bottom-Navigation-Item (Helper class)
+// Widget for Bottom-Navigation-Items (Helper class)
 class _BottomNavItem extends StatelessWidget {
   final IconData icon;
   final String label;

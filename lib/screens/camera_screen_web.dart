@@ -19,7 +19,7 @@ class _WebCameraScreenState extends State<WebCameraScreen> {
   bool _initializing = true;
   String? _errorMessage;
 
-  int _step = 1; // 1 = Moment (Hauptbild), 2 = Selfie
+  int _step = 1; // 1 = Moment, 2 = Selfie
   Uint8List? _mainImage;
 
   @override
